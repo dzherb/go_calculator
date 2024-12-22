@@ -35,7 +35,7 @@ func TestCalculatorHandler(t *testing.T) {
 			name:         "Invalid json",
 			method:       http.MethodPost,
 			body:         []byte(`{"expression: `),
-			responseCode: http.StatusBadRequest,
+			responseCode: http.StatusInternalServerError,
 			result:       0,
 		},
 		{

@@ -43,8 +43,8 @@ func CalculatorHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeError(w, fmt.Errorf("failed to parse body: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		writeError(w, fmt.Errorf("failed to parse request body: %w", err))
 		return
 	}
 
