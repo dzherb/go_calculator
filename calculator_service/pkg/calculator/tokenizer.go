@@ -207,5 +207,5 @@ func Tokenize(expression string) ([]token, error) {
 		return nil, err
 	}
 
-	return preprocessTokens(tokens)
+	return preprocessTokens(tokens), nil
 }
