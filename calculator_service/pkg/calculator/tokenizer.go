@@ -149,7 +149,7 @@ func validateTokenSequence(tokens []token) error {
 			}
 			previousType = closingBracket
 		} else {
-			if previousType == operator && currToken.value != "-" || previousType == start {
+			if (previousType == operator || previousType == start) && currToken.value != "-" {
 				return errors.New("unexpected operator")
 			}
 			previousType = operator
@@ -173,7 +173,7 @@ func preprocessTokens(tokens []token) []token {
 		// 1. В начале выражения
 		// 2. После открывающей скобки (
 		// 3. После оператора (+, -, *, /)
-		if currToken.value == "-" && (i == 0 || tokens[i-1].tokenType == closingBracket || tokens[i-1].tokenType == operator) {
+		if currToken.value == "-" && (i == 0 || tokens[i-1].tokenType == openingBracket || tokens[i-1].tokenType == operator) {
 			result = append(result, token{value: "(", tokenType: openingBracket})
 			result = append(result, token{value: "0", tokenType: number})
 			result = append(result, token{value: "-", tokenType: operator})
@@ -207,5 +207,5 @@ func Tokenize(expression string) ([]token, error) {
 		return nil, err
 	}
 
-	return preprocessTokens(tokens), nil
+	return preprocessTokens(tokens)
 }

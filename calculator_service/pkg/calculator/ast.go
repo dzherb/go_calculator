@@ -2,7 +2,6 @@ package calculator
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 )
 
@@ -37,7 +36,6 @@ func (o *operatorNode) evaluate(ctx context.Context, resChan chan float64) {
 		case leftVal = <-leftValChan:
 		case rightVal = <-rightValChan:
 		case <-ctx.Done():
-			fmt.Println("context done")
 			return
 		}
 
