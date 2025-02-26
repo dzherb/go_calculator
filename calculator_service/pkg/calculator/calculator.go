@@ -1,20 +1,33 @@
 package calculator
 
 import (
-	"go/token"
-	"go/types"
-	"strconv"
+	"context"
+	"fmt"
+	"time"
 )
 
 func Calculate(expression string) (float64, error) {
-	fs := token.NewFileSet()
-	tv, err := types.Eval(fs, nil, token.NoPos, expression)
+	tokens, err := Tokenize(expression)
 	if err != nil {
-		return .0, err
+		return 0, err
 	}
-	res, err := strconv.ParseFloat(tv.Value.String(), 64)
-	if err != nil {
-		return .0, err
+
+	// Переводим токены в обратную польскую нотацию (RPN)
+	rpnOrganizedTokens := shuntingYard(tokens)
+
+	ast := buildAST(rpnOrganizedTokens)
+
+	resultChan := make(chan float64)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go ast.evaluate(ctx, resultChan)
+
+	select {
+	case res := <-resultChan:
+		return res, nil
+	case <-time.After(time.Millisecond * 300):
+		cancel()
+		return 0, fmt.Errorf("calculation timed out")
 	}
-	return res, nil
 }

@@ -1,11 +1,10 @@
-package calculator_test
+package calculator
 
 import (
-	"go_calculator/pkg/calculator"
 	"testing"
 )
 
-func TestCalc(t *testing.T) {
+func TestCalculator(t *testing.T) {
 	testCasesSuccess := []struct {
 		name           string
 		expression     string
@@ -35,7 +34,7 @@ func TestCalc(t *testing.T) {
 
 	for _, testCase := range testCasesSuccess {
 		t.Run(testCase.name, func(t *testing.T) {
-			val, err := calculator.Calculate(testCase.expression)
+			val, err := Calculate(testCase.expression)
 			if err != nil {
 				t.Fatalf("successful case %s returns error", testCase.expression)
 			}
@@ -70,7 +69,7 @@ func TestCalc(t *testing.T) {
 
 	for _, testCase := range testCasesFail {
 		t.Run(testCase.name, func(t *testing.T) {
-			val, err := calculator.Calculate(testCase.expression)
+			val, err := Calculate(testCase.expression)
 			if err == nil {
 				t.Fatalf("expression %s is invalid but result  %f was obtained", testCase.expression, val)
 			}
