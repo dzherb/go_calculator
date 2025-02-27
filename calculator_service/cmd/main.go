@@ -1,7 +1,7 @@
 package main
 
 import (
-	"go_calculator/internal/application"
+	"go_calculator/internal/orchestrator"
 	"log/slog"
 	"os"
 )
@@ -10,9 +10,9 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
 
-	app := application.New()
+	app := orchestrator.New()
 	err := app.RunServer()
 	if err != nil {
-		slog.Error("server failed", slog.String("error", err.Error()))
+		slog.Error("server stopped", slog.String("error", err.Error()))
 	}
 }

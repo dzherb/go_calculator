@@ -1,9 +1,9 @@
-package application_test
+package orchestrator_test
 
 import (
 	"bytes"
 	"encoding/json"
-	"go_calculator/internal/application"
+	"go_calculator/internal/orchestrator"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -61,7 +61,7 @@ func TestCalculatorHandler(t *testing.T) {
 			defer req.Body.Close()
 			w := httptest.NewRecorder()
 
-			application.CalculatorHandler(w, req)
+			orchestrator.CalculatorHandler(w, req)
 			res := w.Result()
 
 			if res.StatusCode != tt.responseCode {
@@ -69,7 +69,7 @@ func TestCalculatorHandler(t *testing.T) {
 			}
 
 			if res.StatusCode == http.StatusOK {
-				response := application.SuccessResponse{}
+				response := orchestrator.SuccessResponse{}
 				err := json.NewDecoder(res.Body).Decode(&response)
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)

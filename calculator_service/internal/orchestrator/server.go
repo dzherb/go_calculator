@@ -1,4 +1,4 @@
-package application
+package orchestrator
 
 import (
 	"encoding/json"
@@ -57,7 +57,7 @@ func CalculatorHandler(w http.ResponseWriter, r *http.Request) {
 	result, err := calculator.Calculate(request.Expression)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		writeError(w, fmt.Errorf("expression is not valid"))
+		writeError(w, fmt.Errorf("expression is not valid: %s", err.Error()))
 		return
 	}
 
