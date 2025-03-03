@@ -79,6 +79,10 @@ func TestCalculator(t *testing.T) {
 			name:       "empty expression",
 			expression: "",
 		},
+		{
+			name:       "no operators",
+			expression: "1 23 7.4",
+		},
 	}
 
 	for _, testCase := range testCasesFail {

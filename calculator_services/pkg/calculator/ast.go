@@ -1,56 +1,62 @@
 package calculator
 
 import (
-	"context"
+	"fmt"
 	"strconv"
 )
 
 type node interface {
-	evaluate(ctx context.Context, resChan chan float64)
+	String() string
 }
 
 type numberNode struct {
 	value float64
 }
 
-func (n *numberNode) evaluate(ctx context.Context, resChan chan float64) {
-	resChan <- n.value
+func (n *numberNode) String() string {
+	return fmt.Sprintf("%.2f", n.value)
 }
 
 type operatorNode struct {
-	operator string
-	left     node
-	right    node
+	operator  string
+	left      node
+	right     node
+	parent    *operatorNode // Ссылка на родителя
+	processed bool
 }
 
-func (o *operatorNode) evaluate(ctx context.Context, resChan chan float64) {
-	leftValChan := make(chan float64)
-	rightValChan := make(chan float64)
-	go o.left.evaluate(ctx, leftValChan)
-	go o.right.evaluate(ctx, rightValChan)
+func (o *operatorNode) String() string {
+	return fmt.Sprintf("(%s %s %s)", o.left.String(), o.operator, o.right.String())
+}
 
-	var leftVal, rightVal float64
+func (o *operatorNode) nextReadyForProcessingNode() (*operatorNode, bool) {
+	if o.processed {
+		return nil, false
+	}
 
-	for _ = range 2 {
-		select {
-		case leftVal = <-leftValChan:
-		case rightVal = <-rightValChan:
-		case <-ctx.Done():
-			return
+	// Проверяем, можно ли вычислить этот узел
+	_, leftOK := o.left.(*numberNode)
+	_, rightOK := o.right.(*numberNode)
+
+	if leftOK && rightOK {
+		o.processed = true // Помечаем узел как обработанный
+		return o, true
+	}
+
+	// Рекурсивный поиск
+	if leftOp, ok := o.left.(*operatorNode); ok {
+		if node, ok := leftOp.nextReadyForProcessingNode(); ok {
+			return node, true
 		}
-
 	}
 
-	switch o.operator {
-	case "+":
-		resChan <- leftVal + rightVal
-	case "-":
-		resChan <- leftVal - rightVal
-	case "*":
-		resChan <- leftVal * rightVal
-	case "/":
-		resChan <- leftVal / rightVal
+	if rightOp, ok := o.right.(*operatorNode); ok {
+		if node, ok := rightOp.nextReadyForProcessingNode(); ok {
+			return node, true
+		}
 	}
+
+	return nil, false
 }
 
 // Переводит инфиксное выражение в RPN (обратную польскую нотацию)
@@ -116,5 +122,21 @@ func buildAST(rpnOrganizedTokens []token) node {
 		}
 	}
 
-	return stack[0]
+	root := stack[0]
+	if r, ok := root.(*operatorNode); ok {
+		addParents(r)
+	}
+
+	return root
+}
+
+func addParents(node *operatorNode) {
+	if leftOp, ok := node.left.(*operatorNode); ok {
+		leftOp.parent = node
+		addParents(leftOp)
+	}
+	if rightOp, ok := node.right.(*operatorNode); ok {
+		rightOp.parent = node
+		addParents(rightOp)
+	}
 }
