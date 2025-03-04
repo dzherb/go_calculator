@@ -2,10 +2,12 @@ package orchestrator
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"go_calculator/pkg/calculator"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 type Request struct {
@@ -28,48 +30,174 @@ func writeError(w http.ResponseWriter, err error) {
 	}
 }
 
-func CalculatorHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+func commonMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		w.Header().Set("Content-Type", "application/json")
 
-	w.Header().Set("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
+}
 
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		writeError(w, fmt.Errorf("expected POST method"))
-		return
+func expectMethodMiddleware(methods ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			for _, m := range methods {
+				if r.Method == m {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			writeError(w, fmt.Errorf("expected one of the methods: %s", strings.Join(methods, ", ")))
+			return
+		})
 	}
+}
 
-	request := new(Request)
+type expressionRequest struct {
+	Expression string `json:"expression"`
+}
 
-	err := json.NewDecoder(r.Body).Decode(&request)
+type expressionSimpleResponse struct {
+	Id uint64 `json:"id"`
+}
+
+func calculateHandler(w http.ResponseWriter, r *http.Request) {
+	exp := expressionRequest{}
+	err := json.NewDecoder(r.Body).Decode(&exp)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, fmt.Errorf("failed to parse request body: %w", err))
-		return
-	}
-
-	if request.Expression == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		writeError(w, fmt.Errorf("expression is required"))
+		writeError(w, invalidRequestBodyError)
 		return
 	}
 
-	result, err := calculator.Calculate(request.Expression)
+	expId, err := orchestrator.CreateExpression(exp.Expression)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		writeError(w, fmt.Errorf("expression is not valid: %s", err.Error()))
+		writeError(w, err)
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(SuccessResponse{Result: result})
+	err = json.NewEncoder(w).Encode(expressionSimpleResponse{Id: expId})
+}
+
+type expressionsResponse struct {
+	Expressions []*expressionResponse `json:"expressions"`
+}
+
+func expressionsHandler(w http.ResponseWriter, r *http.Request) {
+	expressions, err := orchestrator.GetAllExpressions()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, fmt.Errorf("internal server error"))
+		writeError(w, err)
+		return
+	}
+
+	response := expressionsResponse{
+		Expressions: expressions,
+	}
+	err = json.NewEncoder(w).Encode(&response)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		writeError(w, err)
+		return
+	}
+}
+
+func expressionHandler(w http.ResponseWriter, r *http.Request) {
+	expressionId, err := strconv.ParseUint(r.PathValue("id"), 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		writeError(w, invalidIdInUrlError)
+		return
+	}
+
+	expression, err := orchestrator.GetExpression(uint64(expressionId))
+	if err != nil {
+		if errors.Is(err, expressionNotFoundError) {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		writeError(w, err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(expression)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		writeError(w, err)
+	}
+}
+
+type taskRequest struct {
+	Id     uint64  `json:"id"`
+	Result float64 `json:"result"`
+}
+
+func taskHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		task := &taskRequest{}
+		err := json.NewDecoder(r.Body).Decode(&task)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			writeError(w, invalidRequestBodyError)
+			return
+		}
+		err = orchestrator.CompleteTask(task.Id, task.Result)
+		if err != nil {
+			if errors.Is(err, taskNotFoundError) {
+				w.WriteHeader(http.StatusNotFound)
+			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			writeError(w, err)
+			return
+		}
+		return
+	}
+
+	task, err := orchestrator.StartProcessingNextTask()
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		writeError(w, err)
+		return
+	}
+	err = json.NewEncoder(w).Encode(task)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		writeError(w, err)
 	}
 }
 
 func (a *Application) RunServer() error {
-	http.HandleFunc("/api/v1/calculate", CalculatorHandler)
+	http.Handle("/api/v1/calculate", commonMiddleware(
+		expectMethodMiddleware("POST")(
+			http.HandlerFunc(calculateHandler),
+		),
+	),
+	)
+	http.Handle("/api/v1/expressions", commonMiddleware(
+		expectMethodMiddleware("GET")(
+			http.HandlerFunc(expressionsHandler),
+		),
+	),
+	)
+	http.Handle("/api/v1/expressions/{id}", commonMiddleware(
+		expectMethodMiddleware("GET")(
+			http.HandlerFunc(expressionHandler),
+		),
+	),
+	)
+
+	http.Handle("/internal/task", commonMiddleware(
+		expectMethodMiddleware("GET", "POST")(
+			http.HandlerFunc(taskHandler),
+		),
+	),
+	)
 
 	slog.Info(fmt.Sprintf("Listening on port %s", a.config.Port))
 	return http.ListenAndServe(a.config.Addr+":"+a.config.Port, nil)

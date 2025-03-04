@@ -10,34 +10,68 @@ import (
 
 var taskIdSeries = atomic.Uint64{}
 
-// Task - структура задачи для вычисления
 type Task struct {
-	Id   uint64
-	Node *operatorNode
+	Id          uint64
+	node        *operatorNode
+	IsCompleted bool
+	IsCancelled bool
+	mu          sync.Mutex
 }
 
 func newTask(node *operatorNode) *Task {
 	return &Task{
 		Id:   taskIdSeries.Add(1),
-		Node: node,
+		node: node,
 	}
 }
 
-func (t *Task) Complete(result float64) {
+func (t *Task) GetArguments() (float64, float64) {
+	return t.node.left.(*numberNode).value, t.node.right.(*numberNode).value
+}
+
+func (t *Task) GetOperator() string {
+	return t.node.operator
+}
+
+func (t *Task) Complete(result float64) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if t.IsCompleted {
+		return errors.New("task is already completed")
+	}
+	if t.IsCancelled {
+		return errors.New("task was cancelled")
+	}
+
 	// Найти родителя и заменить текущий узел на numberNode
-	if t.Node.parent != nil {
-		if t.Node.parent.left == t.Node {
-			t.Node.parent.left = &numberNode{value: result}
-		} else if t.Node.parent.right == t.Node {
-			t.Node.parent.right = &numberNode{value: result}
+	if t.node.parent != nil {
+		if t.node.parent.left == t.node {
+			t.node.parent.left = &numberNode{value: result}
+		} else if t.node.parent.right == t.node {
+			t.node.parent.right = &numberNode{value: result}
 		}
 	} else {
 		// Это корневой узел, заменяем его содержимое
-		*t.Node = operatorNode{left: &numberNode{value: result}, processed: true}
+		*t.node = operatorNode{left: &numberNode{value: result}, processed: true}
 	}
+	t.IsCompleted = true
+	return nil
 }
 
-// compute - выполняет вычисление задачи и обновляет AST
+func (t *Task) Cancel() error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if t.IsCompleted {
+		return errors.New("task is completed and cannot be cancelled")
+	}
+
+	t.IsCancelled = true
+	t.node.processed = false
+	return nil
+}
+
 func compute(left, right float64, operator string) (float64, error) {
 	var result float64
 	switch operator {
@@ -62,16 +96,36 @@ func compute(left, right float64, operator string) (float64, error) {
 var ExpressionIdSeries = atomic.Uint64{}
 
 type Expression struct {
-	Id   uint64
-	Root *operatorNode
-	mu   sync.Mutex
+	Id           uint64
+	Root         *operatorNode
+	IsProcessing bool
+	mu           sync.RWMutex
 }
 
-func NewExpression(node *operatorNode) *Expression {
+func NewExpression(expression string) (*Expression, error) {
+	tokens, err := Tokenize(expression)
+	if err != nil {
+		return nil, err
+	}
+
+	// Переводим токены в обратную польскую нотацию (RPN)
+	rpnOrganizedTokens := shuntingYard(tokens)
+	// Составлем абстрактное синтактическое дерево
+	ast := buildAST(rpnOrganizedTokens)
+
+	var root *operatorNode
+
+	switch n := ast.(type) {
+	case *operatorNode:
+		root = n
+	case *numberNode:
+		root = &operatorNode{left: &numberNode{value: n.value}, processed: true}
+	}
+
 	return &Expression{
 		Id:   ExpressionIdSeries.Add(1),
-		Root: node,
-	}
+		Root: root,
+	}, nil
 }
 
 func (e *Expression) String() string {
@@ -86,14 +140,21 @@ func (e *Expression) GetNextTask() (*Task, bool) {
 	if !ok {
 		return nil, false
 	}
+	e.IsProcessing = true
 	return newTask(node), true
 }
 
 func (e *Expression) IsEvaluated() bool {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
 	return e.Root.processed
 }
 
 func (e *Expression) GetResult() (float64, error) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
 	if !e.IsEvaluated() {
 		return 0, fmt.Errorf("expressions is not evaluated")
 	}
@@ -126,9 +187,8 @@ func simpleEvaluation(exp *Expression) error {
 
 		go func() {
 			defer wg.Done()
-			left := task.Node.left.(*numberNode).value
-			right := task.Node.right.(*numberNode).value
-			result, err := compute(left, right, task.Node.operator)
+			left, right := task.GetArguments()
+			result, err := compute(left, right, task.node.operator)
 			if err != nil {
 				errChan <- err
 			}
