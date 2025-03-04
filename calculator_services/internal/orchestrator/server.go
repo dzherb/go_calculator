@@ -90,6 +90,7 @@ type expressionsResponse struct {
 func expressionsHandler(w http.ResponseWriter, r *http.Request) {
 	expressions, err := orchestrator.GetAllExpressions()
 	if err != nil {
+		slog.Error("Failed to get expressions", slog.String("error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, err)
 		return
@@ -100,6 +101,7 @@ func expressionsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.NewEncoder(w).Encode(&response)
 	if err != nil {
+		slog.Error("Failed to write expression response", slog.String("error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, err)
 		return
@@ -114,11 +116,12 @@ func expressionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expression, err := orchestrator.GetExpression(uint64(expressionId))
+	expression, err := orchestrator.GetExpression(expressionId)
 	if err != nil {
 		if errors.Is(err, expressionNotFoundError) {
 			w.WriteHeader(http.StatusNotFound)
 		} else {
+			slog.Error("Failed to get expression", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		writeError(w, err)
@@ -151,7 +154,8 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 			if errors.Is(err, taskNotFoundError) {
 				w.WriteHeader(http.StatusNotFound)
 			} else {
-				w.WriteHeader(http.StatusInternalServerError)
+				slog.Warn("Client tried to complete a task that is already completed or canceled", slog.String("error", err.Error()))
+				w.WriteHeader(http.StatusBadRequest)
 			}
 			writeError(w, err)
 			return

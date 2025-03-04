@@ -38,10 +38,10 @@ func (t *Task) Complete(result float64) error {
 	defer t.mu.Unlock()
 
 	if t.IsCompleted {
-		return errors.New("task is already completed")
+		return TaskIsCompletedError
 	}
 	if t.IsCancelled {
-		return errors.New("task was cancelled")
+		return TaskIsCanceledError
 	}
 
 	// Найти родителя и заменить текущий узел на numberNode

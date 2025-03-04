@@ -1,11 +1,13 @@
 package orchestrator
 
 import (
+	"fmt"
 	"go_calculator/pkg/calculator"
+	"log/slog"
 	"time"
 )
 
-const TASK_MAX_TIME_TO_LIVE = 20 * time.Second
+const TaskMaxTimeToLive = 20 * time.Second
 
 type expressionStatus string
 
@@ -117,7 +119,8 @@ func (o *Orchestrator) StartProcessingNextTask() (*taskResponse, error) {
 		o.taskStorage.Put(task)
 
 		go func() {
-			time.Sleep(TASK_MAX_TIME_TO_LIVE)
+			time.Sleep(TaskMaxTimeToLive)
+			slog.Warn(fmt.Sprintf("Task %d is canceled due to exceeded time to live", task.Id))
 			task.Cancel()
 		}()
 
