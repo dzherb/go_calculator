@@ -120,8 +120,11 @@ func (o *Orchestrator) StartProcessingNextTask() (*taskResponse, error) {
 
 		go func() {
 			time.Sleep(TaskMaxTimeToLive)
+			err := task.Cancel()
+			if err != nil {
+				return
+			}
 			slog.Warn(fmt.Sprintf("Task %d is canceled due to exceeded time to live", task.Id))
-			task.Cancel()
 		}()
 
 		return newTaskResponse(task)

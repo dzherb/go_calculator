@@ -81,6 +81,11 @@ func calculateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = json.NewEncoder(w).Encode(expressionSimpleResponse{Id: expId})
+	slog.Info(
+		"Created new expression",
+		slog.String("expression", exp.Expression),
+		slog.Uint64("expressionId", expId),
+	)
 }
 
 type expressionsResponse struct {
@@ -150,6 +155,7 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		err = orchestrator.CompleteTask(task.Id, task.Result)
+		slog.Info("Got task result", slog.String("id", strconv.FormatUint(task.Id, 10)))
 		if err != nil {
 			if errors.Is(err, taskNotFoundError) {
 				w.WriteHeader(http.StatusNotFound)
@@ -169,7 +175,10 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
+
 	err = json.NewEncoder(w).Encode(task)
+	slog.Info("Orchestrator delegated a task", slog.String("id", strconv.FormatUint(task.Id, 10)))
+
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, err)
