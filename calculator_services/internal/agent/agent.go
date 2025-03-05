@@ -156,6 +156,7 @@ func (w *agentWorker) sendTaskResult(task taskRequest) error {
 }
 
 func compute(task *taskResponse) (float64, error) {
+	time.Sleep(time.Duration(task.OperationTime))
 	var result float64
 	switch task.Operation {
 	case "+":

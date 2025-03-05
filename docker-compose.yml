@@ -7,8 +7,14 @@ services:
     ports:
       - "8080:8080"
     environment:
-      GO_CALC_ADDR: 0.0.0.0
-      GO_CALC_PORT: 8080
+      ORCHESTRATOR_HOST: 0.0.0.0
+      ORCHESTRATOR_PORT: 8080
+      TIME_ADDITION_MS: 100
+      TIME_SUBTRACTION_MS: 100
+      TIME_MULTIPLICATIONS_MS: 100
+      TIME_DIVISIONS_MS: 100
+      TASK_MAX_PROCESS_TIME_IN_MS: 30000
+
   agent:
     container_name: agent
     build:

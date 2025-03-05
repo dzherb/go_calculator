@@ -18,11 +18,12 @@ func (n *numberNode) String() string {
 }
 
 type operatorNode struct {
-	operator  string
-	left      node
-	right     node
-	parent    *operatorNode // Ссылка на родителя
-	processed bool
+	operator     string
+	left         node
+	right        node
+	parent       *operatorNode // Ссылка на родителя
+	isProcessing bool
+	isProcessed  bool
 }
 
 func (o *operatorNode) String() string {
@@ -30,7 +31,7 @@ func (o *operatorNode) String() string {
 }
 
 func (o *operatorNode) nextReadyForProcessingNode() (*operatorNode, bool) {
-	if o.processed {
+	if o.isProcessed || o.isProcessing {
 		return nil, false
 	}
 
@@ -39,7 +40,7 @@ func (o *operatorNode) nextReadyForProcessingNode() (*operatorNode, bool) {
 	_, rightOK := o.right.(*numberNode)
 
 	if leftOK && rightOK {
-		o.processed = true // Помечаем узел как обработанный
+		o.isProcessing = true
 		return o, true
 	}
 

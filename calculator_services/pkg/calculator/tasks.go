@@ -59,7 +59,7 @@ func (t *Task) Complete(result float64) error {
 		}
 	} else {
 		// Это корневой узел, заменяем его содержимое
-		*t.node = operatorNode{left: &numberNode{value: result}, processed: true}
+		*t.node = operatorNode{left: &numberNode{value: result}, isProcessed: true}
 	}
 	t.IsCompleted = true
 	return nil
@@ -78,7 +78,7 @@ func (t *Task) Cancel() error {
 	}
 
 	t.IsCancelled = true
-	t.node.processed = false
+	t.node.isProcessing = false
 	return nil
 }
 
@@ -130,7 +130,7 @@ func NewExpression(expression string) (*Expression, error) {
 	case *operatorNode:
 		root = n
 	case *numberNode:
-		root = &operatorNode{left: &numberNode{value: n.value}, processed: true}
+		root = &operatorNode{left: &numberNode{value: n.value}, isProcessed: true}
 	}
 
 	return &Expression{
@@ -167,7 +167,7 @@ func (e *Expression) IsEvaluated() bool {
 		return false
 	}
 
-	return e.Root.processed
+	return e.Root.isProcessed
 }
 
 func (e *Expression) GetResult() (float64, error) {

@@ -89,7 +89,7 @@ func calculateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type expressionsResponse struct {
-	Expressions []*expressionResponse `json:"expressions"`
+	Expressions []*ExpressionResponse `json:"expressions"`
 }
 
 func expressionsHandler(w http.ResponseWriter, r *http.Request) {
