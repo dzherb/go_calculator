@@ -1,0 +1,20 @@
+services:
+  orchestrator:
+    container_name: orchestrator
+    build:
+      context: .
+      dockerfile: ./docker/orchestrator/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      GO_CALC_ADDR: 0.0.0.0
+      GO_CALC_PORT: 8080
+  agent:
+    container_name: agent
+    build:
+      context: .
+      dockerfile: ./docker/agent/Dockerfile
+    environment:
+      ORCHESTRATOR_HOST: orchestrator
+      ORCHESTRATOR_PORT: 8080
+      COMPUTING_POWER: 4

@@ -11,25 +11,38 @@ import (
 	"time"
 )
 
-var TaskEndpoint = "http://localhost:8080/internal/task"
 var workerIdCounter = atomic.Uint64{}
 
-func RunWorker() {
-	worker := newAgentWorker()
-	slog.Info("Started a new agent worker", slog.Uint64("workerId", worker.id))
+func (a *Application) Run() {
+	for _ = range a.config.TotalWorkers {
+		go a.runWorker()
+	}
+	waitUntilTermination()
+}
+
+func (a *Application) runWorker() {
+	orchestratorBaseUrl := "http://" + a.config.orchestratorHost + ":" + a.config.orchestratorPort
+	worker := a.newAgentWorker(orchestratorBaseUrl)
+	slog.Info(
+		"Started a new agent worker",
+		slog.Uint64("workerId", worker.id),
+		slog.String("orchestratorUrl", orchestratorBaseUrl),
+	)
 	for {
-		time.Sleep(1 * time.Second)
 		go worker.processTask()
+		time.Sleep(1 * time.Second)
 	}
 }
 
 type agentWorker struct {
-	id uint64
+	id                  uint64
+	orchestratorTaskUrl string
 }
 
-func newAgentWorker() *agentWorker {
+func (a *Application) newAgentWorker(orchestratorBaseUrl string) *agentWorker {
 	return &agentWorker{
-		id: workerIdCounter.Add(1),
+		id:                  workerIdCounter.Add(1),
+		orchestratorTaskUrl: orchestratorBaseUrl + "/internal/task",
 	}
 }
 
@@ -79,7 +92,7 @@ type taskResponse struct {
 
 func (w *agentWorker) getTask() (*taskResponse, error) {
 	client := &http.Client{}
-	request, err := http.NewRequest("GET", TaskEndpoint, nil)
+	request, err := http.NewRequest("GET", w.orchestratorTaskUrl, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +137,7 @@ func (w *agentWorker) sendTaskResult(task taskRequest) error {
 		return err
 	}
 
-	request, err := http.NewRequest("POST", TaskEndpoint, reqBody)
+	request, err := http.NewRequest("POST", w.orchestratorTaskUrl, reqBody)
 	if err != nil {
 		return err
 	}
