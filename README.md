@@ -12,19 +12,13 @@ GO-калькулятор — это веб-сервис для вычислен
 
 ## Сборка и запуск
 
-По умолчанию сервер запускается на *127.0.0.1:8080*.  
-При необходимости адрес и порт можно изменить с помощью переменных окружения:
+Из корня проекта выполните команду:
 
 ```shell
-export GO_CALC_ADDR=0.0.0.0  # Установка адреса на 0.0.0.0
-export GO_CALC_PORT=8081     # Установка порта на 8081
+docker-compose up
 ```
 
-Для запуска приложения выполните следующую команду:
-
-```shell
-go run cmd/main.go
-```
+После сборки образов и запуска контейнеров сервис будет доступен по адресу http://127.0.0.1:8080
 
 ## Взаимодействие с сервисом
 
@@ -39,10 +33,10 @@ curl --location '127.0.0.1:8080/api/v1/calculate' \
 }'
 ```
 
-#### Ответ (HTTP 200):
+#### Ответ (HTTP 201):
 ```json
 {
-  "result": 3.2
+  "id": 1
 }
 ```
 
@@ -71,14 +65,14 @@ curl --location '127.0.0.1:8080/api/v1/calculate' \
 curl --location '127.0.0.1:8080/api/v1/calculate' \
 --header 'Content-Type: application/json' \
 --data '{
-  "expression": "abc - 3"
+  "expression": "3 + a"
 }'
 ```
 
 #### Ответ (HTTP 422):
 ```json
 {
-  "error": "expression is not valid"
+  "error": "expression contains invalid token at position 5: а"
 }
 ```
 
@@ -96,7 +90,7 @@ curl --location '127.0.0.1:8080/api/v1/calculate' \
 #### Ответ (HTTP 400):
 ```json
 {
-  "error": "expression is required"
+  "error": "expression is empty"
 }
 ```
 
@@ -115,12 +109,12 @@ curl --location '127.0.0.1:8080/api/v1/calculate' \
 #### Ответ (HTTP 405):
 ```json
 {
-  "error": "expected POST method"
+  "error": "expected one of the methods: POST"
 }
 ```
 ## Запуск тестов
 
-Тесты можно запустить следующей командой:
+Убедитесь, что находитесь в каталоге calculator_services. Затем запустите команду:
 ```shell
 go test ./... 
 ```
