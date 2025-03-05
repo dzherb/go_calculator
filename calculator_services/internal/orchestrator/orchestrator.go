@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const TaskMaxTimeToLive = 20 * time.Second
+const TaskMaxTimeToLive = 3 * time.Second
 
 type expressionStatus string
 
@@ -15,6 +15,7 @@ const (
 	waitingForProcessing expressionStatus = "waiting for processing"
 	processing           expressionStatus = "processing"
 	processed            expressionStatus = "processed"
+	failed               expressionStatus = "failed"
 )
 
 type expressionResponse struct {
@@ -26,7 +27,11 @@ type expressionResponse struct {
 func newExpressionResponse(expression *calculator.Expression) (*expressionResponse, error) {
 	var status expressionStatus
 	var result *float64
-	if expression.IsEvaluated() {
+
+	if expression.IsFailed {
+		status = failed
+		result = nil
+	} else if expression.IsEvaluated() {
 		status = processed
 		r, err := expression.GetResult()
 		if err != nil {
@@ -148,4 +153,14 @@ func (o *Orchestrator) CancelTask(id uint64) error {
 		return taskNotFoundError
 	}
 	return task.Cancel()
+}
+
+func (o *Orchestrator) OnCalculationFailure(taskId uint64) {
+	task, ok := o.taskStorage.Get(taskId)
+	if !ok {
+		return
+	}
+
+	task.GetExpression().MarkAsFailed()
+	task.Cancel()
 }

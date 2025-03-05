@@ -45,13 +45,20 @@ func (w *agentWorker) processTask() {
 	)
 	res, err := compute(task)
 	if err != nil {
+		errorReq := &taskErrorRequest{Id: task.Id, Error: err.Error()}
+		err = w.sendTaskResult(errorReq)
+		slog.Info(
+			"Failed to compute a task",
+			slog.Uint64("taskId", task.Id),
+			slog.Uint64("workerId", w.id),
+		)
 		return
 	}
-	taskResult := &taskRequest{
+	taskReq := &taskSuccessRequest{
 		Id:     task.Id,
 		Result: res,
 	}
-	err = w.sendTaskResult(taskResult)
+	err = w.sendTaskResult(taskReq)
 	if err != nil {
 		return
 	}
@@ -96,12 +103,19 @@ func (w *agentWorker) getTask() (*taskResponse, error) {
 	return task, nil
 }
 
-type taskRequest struct {
+type taskRequest interface{}
+
+type taskSuccessRequest struct {
 	Id     uint64  `json:"id"`
 	Result float64 `json:"result"`
 }
 
-func (w *agentWorker) sendTaskResult(task *taskRequest) error {
+type taskErrorRequest struct {
+	Id    uint64 `json:"id"`
+	Error string `json:"error"`
+}
+
+func (w *agentWorker) sendTaskResult(task taskRequest) error {
 	client := &http.Client{}
 
 	reqBody := new(bytes.Buffer)

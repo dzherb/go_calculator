@@ -143,6 +143,7 @@ func expressionHandler(w http.ResponseWriter, r *http.Request) {
 type taskRequest struct {
 	Id     uint64  `json:"id"`
 	Result float64 `json:"result"`
+	Error  *string `json:"error"`
 }
 
 func taskHandler(w http.ResponseWriter, r *http.Request) {
@@ -154,13 +155,20 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 			writeError(w, invalidRequestBodyError)
 			return
 		}
+
+		if task.Error != nil {
+			slog.Error("Agent returned calculation error", slog.String("error", *task.Error))
+			orchestrator.OnCalculationFailure(task.Id)
+			return
+		}
+
 		err = orchestrator.CompleteTask(task.Id, task.Result)
 		slog.Info("Got task result", slog.String("id", strconv.FormatUint(task.Id, 10)))
 		if err != nil {
 			if errors.Is(err, taskNotFoundError) {
 				w.WriteHeader(http.StatusNotFound)
 			} else {
-				slog.Warn("Client tried to complete a task that is already completed or canceled", slog.String("error", err.Error()))
+				slog.Warn("Agent tried to complete a task that is already completed or canceled", slog.String("error", err.Error()))
 				w.WriteHeader(http.StatusBadRequest)
 			}
 			writeError(w, err)

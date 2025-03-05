@@ -12,16 +12,18 @@ var taskIdSeries = atomic.Uint64{}
 
 type Task struct {
 	Id          uint64
+	expression  *Expression
 	node        *operatorNode
 	IsCompleted bool
 	IsCancelled bool
 	mu          sync.Mutex
 }
 
-func newTask(node *operatorNode) *Task {
+func newTask(node *operatorNode, exp *Expression) *Task {
 	return &Task{
-		Id:   taskIdSeries.Add(1),
-		node: node,
+		Id:         taskIdSeries.Add(1),
+		expression: exp,
+		node:       node,
 	}
 }
 
@@ -31,6 +33,10 @@ func (t *Task) GetArguments() (float64, float64) {
 
 func (t *Task) GetOperator() string {
 	return t.node.operator
+}
+
+func (t *Task) GetExpression() *Expression {
+	return t.expression
 }
 
 func (t *Task) Complete(result float64) error {
@@ -67,6 +73,10 @@ func (t *Task) Cancel() error {
 		return errors.New("task is completed and cannot be cancelled")
 	}
 
+	if t.IsCancelled {
+		return errors.New("task is already cancelled")
+	}
+
 	t.IsCancelled = true
 	t.node.processed = false
 	return nil
@@ -99,6 +109,7 @@ type Expression struct {
 	Id           uint64
 	Root         *operatorNode
 	IsProcessing bool
+	IsFailed     bool
 	mu           sync.RWMutex
 }
 
@@ -136,17 +147,25 @@ func (e *Expression) GetNextTask() (*Task, bool) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
+	if e.IsFailed {
+		return nil, false
+	}
+
 	node, ok := e.Root.nextReadyForProcessingNode()
 	if !ok {
 		return nil, false
 	}
 	e.IsProcessing = true
-	return newTask(node), true
+	return newTask(node, e), true
 }
 
 func (e *Expression) IsEvaluated() bool {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
+
+	if e.IsFailed {
+		return false
+	}
 
 	return e.Root.processed
 }
@@ -162,6 +181,13 @@ func (e *Expression) GetResult() (float64, error) {
 		return resultNode.value, nil
 	}
 	return 0, errors.New("expression result node is not a number")
+}
+
+func (e *Expression) MarkAsFailed() {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	e.IsFailed = true
 }
 
 // simpleEvaluation - параллельный цикл вычислений
