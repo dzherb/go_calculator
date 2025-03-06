@@ -15,7 +15,10 @@ var workerIdCounter = atomic.Uint64{}
 
 func (a *Application) Run() {
 	for _ = range a.config.TotalWorkers {
+		// Запускаем вокреров с небольшой задержкой,
+		// так будем более равномерно обращаться к оркестратору
 		go a.runWorker()
+		time.Sleep(100 * time.Millisecond)
 	}
 	waitUntilTermination()
 }
@@ -29,8 +32,19 @@ func (a *Application) runWorker() {
 		slog.String("orchestratorUrl", orchestratorBaseUrl),
 	)
 	for {
-		go worker.processTask()
-		time.Sleep(1 * time.Second)
+		task, err := worker.getTask()
+		if err != nil {
+			// Не хотим делать подряд неисчислимое количество запросов к оркестратору,
+			// если прямо сейчас не смогли получить задачу, поэтому спим
+			time.Sleep(400 * time.Millisecond)
+			continue
+		}
+		slog.Info(
+			"Got a task from the orchestrator",
+			slog.Uint64("taskId", task.Id),
+			slog.Uint64("workerId", worker.id),
+		)
+		worker.processTask(task)
 	}
 }
 
@@ -46,16 +60,7 @@ func (a *Application) newAgentWorker(orchestratorBaseUrl string) *agentWorker {
 	}
 }
 
-func (w *agentWorker) processTask() {
-	task, err := w.getTask()
-	if err != nil {
-		return
-	}
-	slog.Info(
-		"Got a task from the orchestrator",
-		slog.Uint64("taskId", task.Id),
-		slog.Uint64("workerId", w.id),
-	)
+func (w *agentWorker) processTask(task *taskResponse) {
 	res, err := compute(task)
 	if err != nil {
 		errorReq := &taskErrorRequest{Id: task.Id, Error: err.Error()}
