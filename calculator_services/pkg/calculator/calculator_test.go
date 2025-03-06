@@ -32,13 +32,23 @@ func TestCalculator(t *testing.T) {
 		},
 		{
 			name:           "whitespace",
-			expression:     "1 -   0.5 + 3",
-			expectedResult: 3.5,
+			expression:     "1 -   0.5 + 3-(3  *2)",
+			expectedResult: -2.5,
+		},
+		{
+			name:           "unary minus",
+			expression:     "-2",
+			expectedResult: -2,
 		},
 		{
 			name:           "complex expression",
 			expression:     "-1.2*(3-2) / 10 + (-4 - 3.5)",
 			expectedResult: -7.62,
+		},
+		{
+			name:           "negative numbers order",
+			expression:     "55-12/(3-4)-17",
+			expectedResult: 50,
 		},
 	}
 

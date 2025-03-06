@@ -57,25 +57,17 @@ func tokenize(expression string) ([]token, error) {
 	res := make([]token, 0)
 
 	lastTokenContainsDigitSeparator := false
+	hasWhitespaceAfterLastToken := false
 	for i, char := range expression {
 		if unicode.IsSpace(char) {
+			hasWhitespaceAfterLastToken = true
 			continue
 		}
 		currentSymbol := string(char)
 
 		currentSymbolMeta, ok := validTokens[currentSymbol]
 		if !ok {
-			return nil, fmt.Errorf("expression contains invalid token at position %d: %s", i+1, string(char))
-		}
-
-		currentTokenType := number
-
-		if currentSymbolMeta.isOperator {
-			currentTokenType = operator
-		} else if currentSymbolMeta.isOpeningBracket {
-			currentTokenType = openingBracket
-		} else if currentSymbolMeta.isClosingBracket {
-			currentTokenType = closingBracket
+			return nil, fmt.Errorf("expression contains invalid token at position %d: %s", i, string(char))
 		}
 
 		var lastToken *token
@@ -84,6 +76,23 @@ func tokenize(expression string) ([]token, error) {
 		} else {
 			lastToken = &res[len(res)-1]
 		}
+
+		var currentTokenType tokenType
+
+		if currentSymbolMeta.isOperator {
+			currentTokenType = operator
+		} else if currentSymbolMeta.isOpeningBracket {
+			currentTokenType = openingBracket
+		} else if currentSymbolMeta.isClosingBracket {
+			currentTokenType = closingBracket
+		} else {
+			currentTokenType = number
+			if hasWhitespaceAfterLastToken && lastToken.tokenType == number {
+				return nil, fmt.Errorf("unexpected whitespace at position %d", i)
+			}
+		}
+
+		hasWhitespaceAfterLastToken = false
 
 		if currentSymbolMeta.isDigit {
 			if lastToken.tokenType == number {
@@ -162,10 +171,10 @@ func validateTokenSequence(tokens []token) error {
 	return nil
 }
 
-// Приводит выражения вида -12/-2 к (0-12)/(0-2)
+// Объединяет токен минуса с токеном числа, если это унарный минус
 func preprocessTokens(tokens []token) []token {
 	var result []token
-
+	nextNumberIsNegative := false
 	for i := 0; i < len(tokens); i++ {
 		currToken := tokens[i]
 
@@ -174,18 +183,17 @@ func preprocessTokens(tokens []token) []token {
 		// 2. После открывающей скобки (
 		// 3. После оператора (+, -, *, /)
 		if currToken.value == "-" && (i == 0 || tokens[i-1].tokenType == openingBracket || tokens[i-1].tokenType == operator) {
-			result = append(result, token{value: "(", tokenType: openingBracket})
-			result = append(result, token{value: "0", tokenType: number})
-			result = append(result, token{value: "-", tokenType: operator})
+			nextNumberIsNegative = true
 			continue
 		}
 
-		result = append(result, currToken)
-
-		// Закрываем скобку, если это число после унарного минуса
-		if len(result) > 2 && result[len(result)-2].value == "-" && currToken.tokenType == number {
-			result = append(result, token{value: ")", tokenType: closingBracket})
+		if currToken.tokenType == number && nextNumberIsNegative {
+			negativeNumberToken := token{tokenType: number, value: tokens[i-1].value + currToken.value}
+			result = append(result, negativeNumberToken)
+		} else {
+			result = append(result, currToken)
 		}
+		nextNumberIsNegative = false
 	}
 
 	return result
