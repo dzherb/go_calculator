@@ -32,7 +32,14 @@ func writeError(w http.ResponseWriter, err error) {
 
 func commonMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "OPTIONS" {
+			return
+		}
+
 		defer r.Body.Close()
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,access-control-allow-origin, access-control-allow-headers")
 		w.Header().Set("Content-Type", "application/json")
 
 		next.ServeHTTP(w, r)
