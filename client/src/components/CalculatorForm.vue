@@ -55,6 +55,7 @@ const expressionToSend = ref('')
 const {result, status, error, isLoading} = useExpressionServerEvaluation(expressionToSend)
 
 const sendExpression = () => {
+  expressionToSend.value = null  // Сперва обнуляем, чтобы могли подряд отправить одно и то же выражение
   expressionToSend.value = expression.value
 }
 
