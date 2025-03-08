@@ -13,23 +13,25 @@ export const useExpressionServerEvaluation = (expression) => {
   const error = ref(null)
   const isLoading = ref(false)
 
-  const sendAndCheck = () => {
+  const send = () => {
+    isLoading.value = true
+    _sendExpressionAndCheckResult(toValue(expression), result, status, error)
+      .then(() => isLoading.value = false)
+  }
+
+  const reset = () => {
+    toValue(expression)  // Хотим обнулять предыдущий результат после изменения выражения
     result.value = null
     status.value = null
     error.value = null
-    if (!expression.value) {
-      isLoading.value = false
-      return
-    }
-    isLoading.value = true
-    _sendExpressionAndCheckResult(toValue(expression), result, status, error).then(() => isLoading.value = false)
+    isLoading.value = false
   }
 
   watchEffect(() => {
-    sendAndCheck()
+    reset()
   })
 
-  return {result, status, error, isLoading}
+  return {result, status, error, isLoading, send, reset}
 }
 
 const _sendExpressionAndCheckResult = async (expression, resultRef, statusRef, errorRef) => {

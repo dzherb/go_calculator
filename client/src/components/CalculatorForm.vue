@@ -23,7 +23,7 @@
           variant="flat"
           color="green"
           class="text-subtitle-2"
-          @click="sendExpression()"
+          @click="send()"
         >
           Send
         </v-btn>
@@ -46,20 +46,14 @@
 </template>
 
 <script setup>
-import {computed, ref, watch} from "vue";
+import {computed, ref} from "vue";
 import {useExpressionServerEvaluation} from "@/composables.js";
 import {EXPRESSION_STATUS} from "@/api.js";
 
 const expression = ref('')
-const expressionToSend = ref('')
-const {result, status, error, isLoading} = useExpressionServerEvaluation(expressionToSend)
-
-const sendExpression = () => {
-  expressionToSend.value = null  // Сперва обнуляем, чтобы могли подряд отправить одно и то же выражение
-  expressionToSend.value = expression.value
-}
-
 const isSendButtonDisabled = computed(() => !expression.value)
+
+const {result, status, error, isLoading, send} = useExpressionServerEvaluation(expression)
 
 const statusColor = computed(() => {
   switch (status.value) {
@@ -72,11 +66,6 @@ const statusColor = computed(() => {
     case EXPRESSION_STATUS.FAILED:
       return 'red'
   }
-})
-
-watch(expression, () => {
-  // Так мы очищаем результат сразу после изменения выражения
-  expressionToSend.value = null
 })
 </script>
 
