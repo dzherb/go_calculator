@@ -14,5 +14,6 @@ func main() {
 	err := app.RunServer()
 	if err != nil {
 		slog.Error("server stopped", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 }

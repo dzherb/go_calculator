@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"os"
+	"go_calculator/internal/common"
 	"strconv"
 )
 
@@ -14,24 +14,12 @@ type Config struct {
 func ConfigFromEnv() *Config {
 	config := new(Config)
 
-	orchestratorHost, exists := os.LookupEnv("ORCHESTRATOR_HOST")
-	if !exists {
-		orchestratorHost = "localhost"
-	}
-	config.orchestratorHost = orchestratorHost
+	config.orchestratorHost = common.EnvOrDefault("ORCHESTRATOR_HOST", "localhost")
+	config.orchestratorPort = common.EnvOrDefault("ORCHESTRATOR_PORT", "8080")
 
-	orchestratorPort, exists := os.LookupEnv("ORCHESTRATOR_PORT")
-	if !exists {
-		orchestratorPort = "8080"
-	}
-	config.orchestratorPort = orchestratorPort
+	workers := common.EnvOrDefault("COMPUTING_POWER", "4")
+	config.TotalWorkers, _ = strconv.Atoi(workers)
 
-	workers, exists := os.LookupEnv("COMPUTING_POWER")
-	if !exists {
-		config.TotalWorkers = 4
-	} else {
-		config.TotalWorkers, _ = strconv.Atoi(workers)
-	}
 	return config
 }
 

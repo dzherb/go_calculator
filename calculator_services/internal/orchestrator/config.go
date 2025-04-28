@@ -1,6 +1,7 @@
 package orchestrator
 
 import (
+	"go_calculator/internal/common"
 	"os"
 	"strconv"
 	"time"
@@ -18,14 +19,9 @@ type Config struct {
 
 func ConfigFromEnv() *Config {
 	config := new(Config)
-	config.Addr = os.Getenv("ORCHESTRATOR_HOST")
-	if config.Addr == "" {
-		config.Addr = "127.0.0.1"
-	}
-	config.Port = os.Getenv("ORCHESTRATOR_PORT")
-	if config.Port == "" {
-		config.Port = "8080"
-	}
+
+	config.Addr = common.EnvOrDefault("ORCHESTRATOR_HOST", "127.0.0.1")
+	config.Port = common.EnvOrDefault("ORCHESTRATOR_PORT", "8080")
 
 	if addTime, exists := os.LookupEnv("TIME_ADDITION_MS"); exists {
 		config.AdditionTime = getDurationInMs(addTime)

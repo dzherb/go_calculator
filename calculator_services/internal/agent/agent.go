@@ -3,8 +3,8 @@ package agent
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"sync/atomic"
@@ -106,10 +106,18 @@ func (w *agentWorker) getTask() (*taskResponse, error) {
 		return nil, err
 	}
 
-	defer response.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			slog.Error(
+				"Failed to close response body",
+				slog.String("error", err.Error()),
+			)
+		}
+	}(response.Body)
 
 	if response.StatusCode != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("couldn't get a task from the orchestrator, received %d status", response.StatusCode))
+		return nil, fmt.Errorf("failed to retrieve a task from the orchestrator (%d status code)", response.StatusCode)
 	}
 
 	task := &taskResponse{}
@@ -154,7 +162,7 @@ func (w *agentWorker) sendTaskResult(task taskRequest) error {
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return errors.New(fmt.Sprintf("got no task result confirmation from the orchestrator, received %d status", response.StatusCode))
+		return fmt.Errorf("no task result confirmation from the orchestrator (%d status code)", response.StatusCode)
 	}
 
 	return nil
@@ -176,7 +184,7 @@ func compute(task *taskResponse) (float64, error) {
 		}
 		result = task.Arg1 / task.Arg2
 	default:
-		return 0, fmt.Errorf("invalid or unsupported operation: %s", task.Operation)
+		return 0, fmt.Errorf("invalid or unsupported operation '%s'", task.Operation)
 	}
 
 	return result, nil
