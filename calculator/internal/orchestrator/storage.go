@@ -1,8 +1,9 @@
 package orchestrator
 
 import (
-	"go_calculator/pkg/calculator"
 	"sync"
+
+	"github.com/dzherb/go_calculator/pkg/calculator"
 )
 
 type Storage[T any] interface {

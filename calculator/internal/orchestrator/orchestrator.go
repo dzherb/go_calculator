@@ -2,9 +2,10 @@ package orchestrator
 
 import (
 	"fmt"
-	"go_calculator/pkg/calculator"
 	"log/slog"
 	"time"
+
+	"github.com/dzherb/go_calculator/pkg/calculator"
 )
 
 type Orchestrator struct {
@@ -62,7 +63,12 @@ func (o *Orchestrator) StartProcessingNextTask() (*TaskResponse, error) {
 			if err != nil {
 				return
 			}
-			slog.Warn(fmt.Sprintf("Task %d is canceled due to exceeded time to live", task.Id))
+			slog.Warn(
+				fmt.Sprintf(
+					"Task %d is canceled due to exceeded time to live",
+					task.Id,
+				),
+			)
 		}()
 
 		return newTaskResponse(task)
@@ -113,7 +119,9 @@ type ExpressionResponse struct {
 	Result *float64         `json:"result"`
 }
 
-func newExpressionResponse(expression *calculator.Expression) (*ExpressionResponse, error) {
+func newExpressionResponse(
+	expression *calculator.Expression,
+) (*ExpressionResponse, error) {
 	var status expressionStatus
 	var result *float64
 

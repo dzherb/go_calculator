@@ -67,7 +67,11 @@ func tokenize(expression string) ([]token, error) {
 
 		currentSymbolMeta, ok := validTokens[currentSymbol]
 		if !ok {
-			return nil, fmt.Errorf("expression contains invalid token at position %d: %s", i, string(char))
+			return nil, fmt.Errorf(
+				"expression contains invalid token at position %d: %s",
+				i,
+				string(char),
+			)
 		}
 
 		var lastToken *token
@@ -182,13 +186,17 @@ func preprocessTokens(tokens []token) []token {
 		// 1. В начале выражения
 		// 2. После открывающей скобки (
 		// 3. После оператора (+, -, *, /)
-		if currToken.value == "-" && (i == 0 || tokens[i-1].tokenType == openingBracket || tokens[i-1].tokenType == operator) {
+		if currToken.value == "-" &&
+			(i == 0 || tokens[i-1].tokenType == openingBracket || tokens[i-1].tokenType == operator) {
 			nextNumberIsNegative = true
 			continue
 		}
 
 		if currToken.tokenType == number && nextNumberIsNegative {
-			negativeNumberToken := token{tokenType: number, value: tokens[i-1].value + currToken.value}
+			negativeNumberToken := token{
+				tokenType: number,
+				value:     tokens[i-1].value + currToken.value,
+			}
 			result = append(result, negativeNumberToken)
 		} else {
 			result = append(result, currToken)

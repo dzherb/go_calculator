@@ -24,7 +24,10 @@ func writeError(w http.ResponseWriter, err error) {
 	errRes := ErrorResponse{Error: err.Error()}
 	err = json.NewEncoder(w).Encode(errRes)
 	if err != nil {
-		slog.Error("Failed to write response", slog.String("error", err.Error()))
+		slog.Error(
+			"Failed to write response",
+			slog.String("error", err.Error()),
+		)
 	}
 }
 
@@ -67,7 +70,10 @@ type expressionsResponse struct {
 func expressionsHandler(w http.ResponseWriter, r *http.Request) {
 	expressions, err := orchestrator.GetAllExpressions()
 	if err != nil {
-		slog.Error("Failed to get expressions", slog.String("error", err.Error()))
+		slog.Error(
+			"Failed to get expressions",
+			slog.String("error", err.Error()),
+		)
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, err)
 		return
@@ -78,7 +84,10 @@ func expressionsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.NewEncoder(w).Encode(&response)
 	if err != nil {
-		slog.Error("Failed to write expression response", slog.String("error", err.Error()))
+		slog.Error(
+			"Failed to write expression response",
+			slog.String("error", err.Error()),
+		)
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, err)
 		return
@@ -129,13 +138,19 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if task.Error != nil {
-			slog.Error("Agent returned calculation error", slog.String("error", *task.Error))
+			slog.Error(
+				"Agent returned calculation error",
+				slog.String("error", *task.Error),
+			)
 			orchestrator.OnCalculationFailure(task.Id)
 			return
 		}
 
 		err = orchestrator.CompleteTask(task.Id, task.Result)
-		slog.Info("Got task result", slog.String("id", strconv.FormatUint(task.Id, 10)))
+		slog.Info(
+			"Got task result",
+			slog.String("id", strconv.FormatUint(task.Id, 10)),
+		)
 		if err != nil {
 			if errors.Is(err, taskNotFoundError) {
 				w.WriteHeader(http.StatusNotFound)
@@ -157,7 +172,10 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = json.NewEncoder(w).Encode(task)
-	slog.Info("Orchestrator delegated a task", slog.String("id", strconv.FormatUint(task.Id, 10)))
+	slog.Info(
+		"Orchestrator delegated a task",
+		slog.String("id", strconv.FormatUint(task.Id, 10)),
+	)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

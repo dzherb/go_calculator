@@ -110,7 +110,11 @@ func TestTokenizer(t *testing.T) {
 		t.Run(testCase.expression, func(t *testing.T) {
 			res, err := tokenize(testCase.expression)
 			if err != nil && !testCase.expectError {
-				t.Fatalf("expression %s is valid but error returned: %s", testCase.expression, err.Error())
+				t.Fatalf(
+					"expression %s is valid but error returned: %s",
+					testCase.expression,
+					err.Error(),
+				)
 				return
 			}
 			if !reflect.DeepEqual(res, testCase.expected) {

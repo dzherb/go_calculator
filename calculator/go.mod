@@ -1,3 +1,3 @@
-module go_calculator
+module github.com/dzherb/go_calculator
 
-go 1.22
+go 1.24

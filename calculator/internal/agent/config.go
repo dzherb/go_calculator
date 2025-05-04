@@ -1,8 +1,9 @@
 package agent
 
 import (
-	"go_calculator/internal/common"
 	"strconv"
+
+	"github.com/dzherb/go_calculator/internal/common"
 )
 
 type Config struct {
@@ -14,7 +15,10 @@ type Config struct {
 func ConfigFromEnv() *Config {
 	config := new(Config)
 
-	config.orchestratorHost = common.EnvOrDefault("ORCHESTRATOR_HOST", "localhost")
+	config.orchestratorHost = common.EnvOrDefault(
+		"ORCHESTRATOR_HOST",
+		"localhost",
+	)
 	config.orchestratorPort = common.EnvOrDefault("ORCHESTRATOR_PORT", "8080")
 
 	workers := common.EnvOrDefault("COMPUTING_POWER", "4")

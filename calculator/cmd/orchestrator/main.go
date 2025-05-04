@@ -1,9 +1,10 @@
 package main
 
 import (
-	"go_calculator/internal/orchestrator"
 	"log/slog"
 	"os"
+
+	"github.com/dzherb/go_calculator/internal/orchestrator"
 )
 
 func main() {

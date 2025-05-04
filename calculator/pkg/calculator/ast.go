@@ -27,7 +27,12 @@ type operatorNode struct {
 }
 
 func (o *operatorNode) String() string {
-	return fmt.Sprintf("(%s %s %s)", o.left.String(), o.operator, o.right.String())
+	return fmt.Sprintf(
+		"(%s %s %s)",
+		o.left.String(),
+		o.operator,
+		o.right.String(),
+	)
 }
 
 func (o *operatorNode) nextReadyForProcessingNode() (*operatorNode, bool) {

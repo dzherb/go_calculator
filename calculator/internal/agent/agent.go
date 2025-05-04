@@ -14,7 +14,7 @@ import (
 var workerIdCounter = atomic.Uint64{}
 
 func (a *Application) Run() {
-	for _ = range a.config.TotalWorkers {
+	for range a.config.TotalWorkers {
 		// Запускаем вокреров с небольшой задержкой,
 		// так будем более равномерно обращаться к оркестратору
 		go a.runWorker()
@@ -117,7 +117,10 @@ func (w *agentWorker) getTask() (*taskResponse, error) {
 	}(response.Body)
 
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to retrieve a task from the orchestrator (%d status code)", response.StatusCode)
+		return nil, fmt.Errorf(
+			"failed to retrieve a task from the orchestrator (%d status code)",
+			response.StatusCode,
+		)
 	}
 
 	task := &taskResponse{}
@@ -162,7 +165,10 @@ func (w *agentWorker) sendTaskResult(task taskRequest) error {
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("no task result confirmation from the orchestrator (%d status code)", response.StatusCode)
+		return fmt.Errorf(
+			"no task result confirmation from the orchestrator (%d status code)",
+			response.StatusCode,
+		)
 	}
 
 	return nil
@@ -184,7 +190,10 @@ func compute(task *taskResponse) (float64, error) {
 		}
 		result = task.Arg1 / task.Arg2
 	default:
-		return 0, fmt.Errorf("invalid or unsupported operation '%s'", task.Operation)
+		return 0, fmt.Errorf(
+			"invalid or unsupported operation '%s'",
+			task.Operation,
+		)
 	}
 
 	return result, nil

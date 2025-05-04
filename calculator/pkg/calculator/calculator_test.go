@@ -56,7 +56,11 @@ func TestCalculator(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			val, err := Calculate(testCase.expression)
 			if err != nil {
-				t.Fatalf("successful case %s returns error: %s", testCase.expression, err.Error())
+				t.Fatalf(
+					"successful case %s returns error: %s",
+					testCase.expression,
+					err.Error(),
+				)
 			}
 			if val != testCase.expectedResult {
 				t.Fatalf("%f should be equal %f", val, testCase.expectedResult)
@@ -99,7 +103,11 @@ func TestCalculator(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			val, err := Calculate(testCase.expression)
 			if err == nil {
-				t.Fatalf("expression %s is invalid but result  %f was obtained", testCase.expression, val)
+				t.Fatalf(
+					"expression %s is invalid but result  %f was obtained",
+					testCase.expression,
+					val,
+				)
 			}
 		})
 	}

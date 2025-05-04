@@ -1,10 +1,11 @@
 package orchestrator
 
 import (
-	"go_calculator/internal/common"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/dzherb/go_calculator/internal/common"
 )
 
 type Config struct {
