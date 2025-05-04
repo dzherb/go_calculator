@@ -2,7 +2,7 @@ FROM golang:alpine AS builder
 
 WORKDIR /build
 
-COPY ./calculator_services .
+COPY ./calculator .
 
 RUN go build -o main ./cmd/agent/
 
