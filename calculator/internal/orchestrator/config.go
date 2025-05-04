@@ -27,12 +27,15 @@ func ConfigFromEnv() *Config {
 	if addTime, exists := os.LookupEnv("TIME_ADDITION_MS"); exists {
 		config.AdditionTime = getDurationInMs(addTime)
 	}
+
 	if subTime, exists := os.LookupEnv("TIME_SUBTRACTION_MS"); exists {
 		config.SubtractionTime = getDurationInMs(subTime)
 	}
+
 	if mulTime, exists := os.LookupEnv("TIME_MULTIPLICATIONS_MS"); exists {
 		config.MultiplicationTime = getDurationInMs(mulTime)
 	}
+
 	if divTime, exists := os.LookupEnv("TIME_DIVISIONS_MS"); exists {
 		config.DivisionTime = getDurationInMs(divTime)
 	}
@@ -55,6 +58,7 @@ func New() *Application {
 		config: ConfigFromEnv(),
 	}
 	orchestrator.app = app
+
 	return app
 }
 

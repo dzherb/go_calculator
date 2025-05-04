@@ -46,6 +46,7 @@ func (t *Task) Complete(result float64) error {
 	if t.IsCompleted {
 		return TaskIsCompletedError
 	}
+
 	if t.IsCancelled {
 		return TaskIsCanceledError
 	}
@@ -61,7 +62,9 @@ func (t *Task) Complete(result float64) error {
 		// Это корневой узел, заменяем его содержимое
 		*t.node = operatorNode{left: &numberNode{value: result}, isProcessed: true}
 	}
+
 	t.IsCompleted = true
+
 	return nil
 }
 
@@ -79,11 +82,13 @@ func (t *Task) Cancel() error {
 
 	t.IsCancelled = true
 	t.node.isProcessing = false
+
 	return nil
 }
 
 func compute(left, right float64, operator string) (float64, error) {
 	var result float64
+
 	switch operator {
 	case "+":
 		result = left + right
@@ -95,6 +100,7 @@ func compute(left, right float64, operator string) (float64, error) {
 		if right == 0 {
 			return 0, fmt.Errorf("division by zero")
 		}
+
 		result = left / right
 	default:
 		return 0, fmt.Errorf("invalid or unsupported operator: %s", operator)
@@ -155,7 +161,9 @@ func (e *Expression) GetNextTask() (*Task, bool) {
 	if !ok {
 		return nil, false
 	}
+
 	e.IsProcessing = true
+
 	return newTask(node, e), true
 }
 
@@ -177,9 +185,11 @@ func (e *Expression) GetResult() (float64, error) {
 	if !e.IsEvaluated() {
 		return 0, fmt.Errorf("expressions is not evaluated")
 	}
+
 	if resultNode, ok := e.Root.left.(*numberNode); ok {
 		return resultNode.value, nil
 	}
+
 	return 0, errors.New("expression result node is not a number")
 }
 
@@ -193,17 +203,21 @@ func (e *Expression) MarkAsFailed() {
 // simpleEvaluation - параллельный цикл вычислений
 func simpleEvaluation(exp *Expression) error {
 	var wg sync.WaitGroup
+
 	errChan := make(chan error)
 	isFinished := make(chan bool)
+
 	defer close(errChan)
 	defer close(isFinished)
 
 	for {
 		task, ok := exp.GetNextTask()
 		if !ok {
-			// Ждём, если задач временно нет, но AST еще не завершен
+			// Ждём, если задач временно нет, но AST еще не вычислен
 			time.Sleep(10 * time.Millisecond)
+
 			task, ok = exp.GetNextTask()
+
 			if !ok {
 				break // Выход, если задач больше нет
 			}
@@ -213,11 +227,14 @@ func simpleEvaluation(exp *Expression) error {
 
 		go func() {
 			defer wg.Done()
+
 			left, right := task.GetArguments()
+
 			result, err := compute(left, right, task.node.operator)
 			if err != nil {
 				errChan <- err
 			}
+
 			task.Complete(result)
 		}()
 	}

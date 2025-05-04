@@ -115,8 +115,10 @@ func TestTokenizer(t *testing.T) {
 					testCase.expression,
 					err.Error(),
 				)
+
 				return
 			}
+
 			if !reflect.DeepEqual(res, testCase.expected) {
 				t.Fatalf("got %+v, expected %+v", res, testCase.expected)
 			}

@@ -22,6 +22,7 @@ type ErrorResponse struct {
 
 func writeError(w http.ResponseWriter, err error) {
 	errRes := ErrorResponse{Error: err.Error()}
+
 	err = json.NewEncoder(w).Encode(errRes)
 	if err != nil {
 		slog.Error(
@@ -41,10 +42,12 @@ type expressionSimpleResponse struct {
 
 func calculateHandler(w http.ResponseWriter, r *http.Request) {
 	exp := expressionRequest{}
+
 	err := json.NewDecoder(r.Body).Decode(&exp)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		writeError(w, invalidRequestBodyError)
+
 		return
 	}
 
@@ -52,6 +55,7 @@ func calculateHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		writeError(w, err)
+
 		return
 	}
 
@@ -76,12 +80,14 @@ func expressionsHandler(w http.ResponseWriter, r *http.Request) {
 		)
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, err)
+
 		return
 	}
 
 	response := expressionsResponse{
 		Expressions: expressions,
 	}
+
 	err = json.NewEncoder(w).Encode(&response)
 	if err != nil {
 		slog.Error(
@@ -90,6 +96,7 @@ func expressionsHandler(w http.ResponseWriter, r *http.Request) {
 		)
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, err)
+
 		return
 	}
 }
@@ -99,6 +106,7 @@ func expressionHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		writeError(w, invalidIdInUrlError)
+
 		return
 	}
 
@@ -110,7 +118,9 @@ func expressionHandler(w http.ResponseWriter, r *http.Request) {
 			slog.Error("Failed to get expression", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
 		}
+
 		writeError(w, err)
+
 		return
 	}
 
@@ -130,10 +140,12 @@ type taskRequest struct {
 func taskHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		task := &taskRequest{}
+
 		err := json.NewDecoder(r.Body).Decode(&task)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			writeError(w, invalidRequestBodyError)
+
 			return
 		}
 
@@ -143,14 +155,16 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 				slog.String("error", *task.Error),
 			)
 			orchestrator.OnCalculationFailure(task.Id)
+
 			return
 		}
 
-		err = orchestrator.CompleteTask(task.Id, task.Result)
 		slog.Info(
 			"Got task result",
 			slog.String("id", strconv.FormatUint(task.Id, 10)),
 		)
+
+		err = orchestrator.CompleteTask(task.Id, task.Result)
 		if err != nil {
 			if errors.Is(err, taskNotFoundError) {
 				w.WriteHeader(http.StatusNotFound)
@@ -158,9 +172,12 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 				slog.Warn("Agent tried to complete a task that is already completed or canceled", slog.String("error", err.Error()))
 				w.WriteHeader(http.StatusBadRequest)
 			}
+
 			writeError(w, err)
+
 			return
 		}
+
 		return
 	}
 
@@ -168,6 +185,7 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		writeError(w, err)
+
 		return
 	}
 

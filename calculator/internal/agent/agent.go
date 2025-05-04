@@ -20,17 +20,20 @@ func (a *Application) Run() {
 		go a.runWorker()
 		time.Sleep(100 * time.Millisecond)
 	}
+
 	waitUntilTermination()
 }
 
 func (a *Application) runWorker() {
 	orchestratorBaseUrl := "http://" + a.config.orchestratorHost + ":" + a.config.orchestratorPort
 	worker := a.newAgentWorker(orchestratorBaseUrl)
+
 	slog.Info(
 		"Started a new agent worker",
 		slog.Uint64("workerId", worker.id),
 		slog.String("orchestratorUrl", orchestratorBaseUrl),
 	)
+
 	for {
 		task, err := worker.getTask()
 		if err != nil {
@@ -39,6 +42,7 @@ func (a *Application) runWorker() {
 			time.Sleep(400 * time.Millisecond)
 			continue
 		}
+
 		slog.Info(
 			"Got a task from the orchestrator",
 			slog.Uint64("taskId", task.Id),
@@ -70,16 +74,20 @@ func (w *agentWorker) processTask(task *taskResponse) {
 			slog.Uint64("taskId", task.Id),
 			slog.Uint64("workerId", w.id),
 		)
+
 		return
 	}
+
 	taskReq := &taskSuccessRequest{
 		Id:     task.Id,
 		Result: res,
 	}
+
 	err = w.sendTaskResult(taskReq)
 	if err != nil {
 		return
 	}
+
 	slog.Info(
 		"Successfully processed a task",
 		slog.Uint64("taskId", task.Id),
@@ -97,17 +105,19 @@ type taskResponse struct {
 
 func (w *agentWorker) getTask() (*taskResponse, error) {
 	client := &http.Client{}
-	request, err := http.NewRequest("GET", w.orchestratorTaskUrl, nil)
+
+	request, err := http.NewRequest(http.MethodGet, w.orchestratorTaskUrl, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	response, err := client.Do(request)
 	if err != nil {
 		return nil, err
 	}
 
 	defer func(Body io.ReadCloser) {
-		err := Body.Close()
+		err = Body.Close()
 		if err != nil {
 			slog.Error(
 				"Failed to close response body",
@@ -124,6 +134,7 @@ func (w *agentWorker) getTask() (*taskResponse, error) {
 	}
 
 	task := &taskResponse{}
+
 	err = json.NewDecoder(response.Body).Decode(task)
 	if err != nil {
 		return nil, err
@@ -146,17 +157,22 @@ type taskErrorRequest struct {
 
 func (w *agentWorker) sendTaskResult(task taskRequest) error {
 	client := &http.Client{}
-
 	reqBody := new(bytes.Buffer)
+
 	err := json.NewEncoder(reqBody).Encode(task)
 	if err != nil {
 		return err
 	}
 
-	request, err := http.NewRequest("POST", w.orchestratorTaskUrl, reqBody)
+	request, err := http.NewRequest(
+		http.MethodPost,
+		w.orchestratorTaskUrl,
+		reqBody,
+	)
 	if err != nil {
 		return err
 	}
+
 	request.Header.Set("Content-Type", "application/json")
 
 	response, err := client.Do(request)
@@ -176,7 +192,9 @@ func (w *agentWorker) sendTaskResult(task taskRequest) error {
 
 func compute(task *taskResponse) (float64, error) {
 	time.Sleep(time.Duration(task.OperationTime))
+
 	var result float64
+
 	switch task.Operation {
 	case "+":
 		result = task.Arg1 + task.Arg2
@@ -188,6 +206,7 @@ func compute(task *taskResponse) (float64, error) {
 		if task.Arg2 == 0 {
 			return 0, fmt.Errorf("division by zero")
 		}
+
 		result = task.Arg1 / task.Arg2
 	default:
 		return 0, fmt.Errorf(

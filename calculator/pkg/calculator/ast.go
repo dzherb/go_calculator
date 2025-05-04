@@ -68,11 +68,12 @@ func (o *operatorNode) nextReadyForProcessingNode() (*operatorNode, bool) {
 // Переводит инфиксное выражение в RPN (обратную польскую нотацию)
 func shuntingYard(tokens []token) []token {
 	precedence := map[string]int{"+": 1, "-": 1, "*": 2, "/": 2}
+
 	var output []token
+
 	var operators []token
 
 	for _, currToken := range tokens {
-
 		if currToken.tokenType == number {
 			output = append(output, currToken)
 		} else if currToken.tokenType == operator {
@@ -85,6 +86,7 @@ func shuntingYard(tokens []token) []token {
 					break
 				}
 			}
+
 			operators = append(operators, currToken)
 		} else if currToken.tokenType == openingBracket {
 			operators = append(operators, currToken)
@@ -93,6 +95,7 @@ func shuntingYard(tokens []token) []token {
 				output = append(output, operators[len(operators)-1])
 				operators = operators[:len(operators)-1]
 			}
+
 			if len(operators) > 0 && operators[len(operators)-1].tokenType == openingBracket {
 				operators = operators[:len(operators)-1]
 			}
@@ -141,6 +144,7 @@ func addParents(node *operatorNode) {
 		leftOp.parent = node
 		addParents(leftOp)
 	}
+
 	if rightOp, ok := node.right.(*operatorNode); ok {
 		rightOp.parent = node
 		addParents(rightOp)

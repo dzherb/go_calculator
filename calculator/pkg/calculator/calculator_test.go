@@ -62,6 +62,7 @@ func TestCalculator(t *testing.T) {
 					err.Error(),
 				)
 			}
+
 			if val != testCase.expectedResult {
 				t.Fatalf("%f should be equal %f", val, testCase.expectedResult)
 			}

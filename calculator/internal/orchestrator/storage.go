@@ -29,16 +29,20 @@ func (s *expressionStorage) Get(id uint64) (*calculator.Expression, bool) {
 	defer s.mu.RUnlock()
 
 	exp, ok := s.expressions[id]
+
 	return exp, ok
 }
 
 func (s *expressionStorage) GetAll() []*calculator.Expression {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	expressions := make([]*calculator.Expression, 0, len(s.expressions))
+
 	for _, exp := range s.expressions {
 		expressions = append(expressions, exp)
 	}
+
 	return expressions
 }
 
@@ -63,16 +67,20 @@ func (s *taskStorage) Get(id uint64) (*calculator.Task, bool) {
 	defer s.mu.RUnlock()
 
 	task, ok := s.tasks[id]
+
 	return task, ok
 }
 
 func (s *taskStorage) GetAll() []*calculator.Task {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	tasks := make([]*calculator.Task, 0, len(s.tasks))
+
 	for _, task := range s.tasks {
 		tasks = append(tasks, task)
 	}
+
 	return tasks
 }
 

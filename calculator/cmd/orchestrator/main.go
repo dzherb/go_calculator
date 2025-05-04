@@ -12,6 +12,7 @@ func main() {
 	slog.SetDefault(logger)
 
 	app := orchestrator.New()
+
 	err := app.RunServer()
 	if err != nil {
 		slog.Error("server stopped", slog.String("error", err.Error()))

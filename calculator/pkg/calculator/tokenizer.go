@@ -58,11 +58,13 @@ func tokenize(expression string) ([]token, error) {
 
 	lastTokenContainsDigitSeparator := false
 	hasWhitespaceAfterLastToken := false
+
 	for i, char := range expression {
 		if unicode.IsSpace(char) {
 			hasWhitespaceAfterLastToken = true
 			continue
 		}
+
 		currentSymbol := string(char)
 
 		currentSymbolMeta, ok := validTokens[currentSymbol]
@@ -75,6 +77,7 @@ func tokenize(expression string) ([]token, error) {
 		}
 
 		var lastToken *token
+
 		if i == 0 {
 			lastToken = &token{value: "", tokenType: start}
 		} else {
@@ -91,6 +94,7 @@ func tokenize(expression string) ([]token, error) {
 			currentTokenType = closingBracket
 		} else {
 			currentTokenType = number
+
 			if hasWhitespaceAfterLastToken && lastToken.tokenType == number {
 				return nil, fmt.Errorf("unexpected whitespace at position %d", i)
 			}
@@ -101,14 +105,17 @@ func tokenize(expression string) ([]token, error) {
 		if currentSymbolMeta.isDigit {
 			if lastToken.tokenType == number {
 				lastToken.value = lastToken.value + currentSymbol
+
 				continue
 			}
 		} else if currentSymbolMeta.isDigitSeparator {
 			if !(lastToken.tokenType == number) || lastTokenContainsDigitSeparator {
 				return nil, fmt.Errorf("expression contains invalid number")
 			}
+
 			lastTokenContainsDigitSeparator = true
 			lastToken.value = lastToken.value + currentSymbol
+
 			continue
 		} else {
 			lastTokenContainsDigitSeparator = false
@@ -119,25 +126,31 @@ func tokenize(expression string) ([]token, error) {
 			tokenType: currentTokenType,
 		})
 	}
+
 	return res, nil
 }
 
 // Проверка корректности скобочной последовательности
 func validateBrackets(tokens []token) error {
 	balance := 0
+
 	for _, currToken := range tokens {
 		if currToken.tokenType == openingBracket {
+
 			balance++
 		} else if currToken.tokenType == closingBracket {
 			balance--
+
 			if balance < 0 {
 				return errors.New("unexpected closing bracket")
 			}
 		}
 	}
+
 	if balance != 0 {
 		return errors.New("unexpected opening bracket")
 	}
+
 	return nil
 }
 
@@ -150,21 +163,25 @@ func validateTokenSequence(tokens []token) error {
 			if previousType == number {
 				return errors.New("no operator between numbers")
 			}
+
 			previousType = number
 		} else if currToken.tokenType == openingBracket {
 			if previousType == number {
 				return errors.New("no operator before opening bracket")
 			}
+
 			previousType = openingBracket
 		} else if currToken.tokenType == closingBracket {
 			if previousType == operator || previousType == openingBracket {
 				return errors.New("operator before closing bracket")
 			}
+
 			previousType = closingBracket
 		} else {
 			if (previousType == operator || previousType == start) && currToken.value != "-" {
 				return errors.New("unexpected operator")
 			}
+
 			previousType = operator
 		}
 	}
@@ -172,13 +189,16 @@ func validateTokenSequence(tokens []token) error {
 	if previousType == operator {
 		return errors.New("expression ends with operator")
 	}
+
 	return nil
 }
 
 // Объединяет токен минуса с токеном числа, если это унарный минус
 func preprocessTokens(tokens []token) []token {
 	var result []token
+
 	nextNumberIsNegative := false
+
 	for i := 0; i < len(tokens); i++ {
 		currToken := tokens[i]
 
@@ -201,6 +221,7 @@ func preprocessTokens(tokens []token) []token {
 		} else {
 			result = append(result, currToken)
 		}
+
 		nextNumberIsNegative = false
 	}
 
