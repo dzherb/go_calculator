@@ -1,5 +1,3 @@
-GOBIN ?= $$(go env GOPATH)/bin
-
 .PHONY: test
 test:
 	@go test ./... -count=1
@@ -19,3 +17,7 @@ lint:
 .PHONY: fmt
 fmt:
 	@golangci-lint fmt ./...
+
+.PHONY: proto
+proto:
+	@./scripts/gen_proto.sh
