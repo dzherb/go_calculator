@@ -3,7 +3,7 @@ package agent
 import (
 	"strconv"
 
-	"github.com/dzherb/go_calculator/internal/common"
+	"github.com/dzherb/go_calculator/internal/pkg"
 )
 
 type Config struct {

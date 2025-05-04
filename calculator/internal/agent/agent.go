@@ -52,7 +52,7 @@ func (a *Application) runWorker() {
 		}
 
 		slog.Info(
-			"Got a task from the orchestrator",
+			"Got a taskToProcess from the orchestrator",
 			slog.Uint64("taskId", task.Id),
 			slog.Uint64("workerId", worker.id),
 		)
@@ -60,25 +60,20 @@ func (a *Application) runWorker() {
 	}
 }
 
-type agentWorker struct {
-	id                  uint64
-	orchestratorTaskUrl string
-}
-
 func (a *Application) newAgentWorker(orchestratorBaseUrl string) *agentWorker {
 	return &agentWorker{
 		id:                  workerIdCounter.Add(1),
-		orchestratorTaskUrl: orchestratorBaseUrl + "/internal/task",
+		orchestratorTaskUrl: orchestratorBaseUrl + "/internal/taskToProcess",
 	}
 }
 
-func (w *agentWorker) processTask(task *taskResponse) {
+func (w *agentWorker) processTask(task *taskToProcess) {
 	res, err := compute(task)
 	if err != nil {
 		errorReq := &taskErrorRequest{Id: task.Id, Error: err.Error()}
 
 		slog.Info(
-			"Failed to compute a task",
+			"Failed to compute a taskToProcess",
 			slog.Uint64("taskId", task.Id),
 			slog.Uint64("workerId", w.id),
 		)
@@ -86,7 +81,7 @@ func (w *agentWorker) processTask(task *taskResponse) {
 		err = w.sendTaskResult(errorReq)
 		if err != nil {
 			slog.Info(
-				"Failed to send task result",
+				"Failed to send taskToProcess result",
 				slog.Uint64("taskId", task.Id),
 				slog.Uint64("workerId", w.id),
 			)
@@ -108,21 +103,13 @@ func (w *agentWorker) processTask(task *taskResponse) {
 	}
 
 	slog.Info(
-		"Successfully processed a task",
+		"Successfully processed a taskToProcess",
 		slog.Uint64("taskId", task.Id),
 		slog.Uint64("workerId", w.id),
 	)
 }
 
-type taskResponse struct {
-	Id            uint64  `json:"id"`
-	Arg1          float64 `json:"arg1"`
-	Arg2          float64 `json:"arg2"`
-	Operation     string  `json:"operation"`
-	OperationTime uint32  `json:"operation_time"`
-}
-
-func (w *agentWorker) getTask() (*taskResponse, error) {
+func (w *agentWorker) getTask() (*taskToProcess, error) {
 	client := &http.Client{}
 
 	request, err := http.NewRequest(http.MethodGet, w.orchestratorTaskUrl, nil)
@@ -147,12 +134,12 @@ func (w *agentWorker) getTask() (*taskResponse, error) {
 
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
-			"failed to retrieve a task from the orchestrator (%d status code)",
+			"failed to retrieve a taskToProcess from the orchestrator (%d status code)",
 			response.StatusCode,
 		)
 	}
 
-	task := &taskResponse{}
+	task := &taskToProcess{}
 
 	err = json.NewDecoder(response.Body).Decode(task)
 	if err != nil {
@@ -162,7 +149,7 @@ func (w *agentWorker) getTask() (*taskResponse, error) {
 	return task, nil
 }
 
-type taskRequest interface{}
+type taskProcessed interface{}
 
 type taskSuccessRequest struct {
 	Id     uint64  `json:"id"`
@@ -174,7 +161,7 @@ type taskErrorRequest struct {
 	Error string `json:"error"`
 }
 
-func (w *agentWorker) sendTaskResult(task taskRequest) error {
+func (w *agentWorker) sendTaskResult(task taskProcessed) error {
 	client := &http.Client{}
 	reqBody := new(bytes.Buffer)
 
@@ -201,7 +188,7 @@ func (w *agentWorker) sendTaskResult(task taskRequest) error {
 
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf(
-			"no task result confirmation from the orchestrator (%d status code)",
+			"no taskToProcess result confirmation from the orchestrator (%d status code)",
 			response.StatusCode,
 		)
 	}
@@ -209,7 +196,7 @@ func (w *agentWorker) sendTaskResult(task taskRequest) error {
 	return nil
 }
 
-func compute(task *taskResponse) (float64, error) {
+func compute(task *taskToProcess) (float64, error) {
 	time.Sleep(time.Duration(task.OperationTime))
 
 	var result float64
