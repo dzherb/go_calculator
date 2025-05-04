@@ -1,4 +1,4 @@
-package calculator
+package calc
 
 import (
 	"errors"
@@ -15,7 +15,7 @@ type Task struct {
 	expression  *Expression
 	node        *operatorNode
 	IsCompleted bool
-	IsCancelled bool
+	IsCanceled  bool
 	mu          sync.Mutex
 }
 
@@ -44,11 +44,11 @@ func (t *Task) Complete(result float64) error {
 	defer t.mu.Unlock()
 
 	if t.IsCompleted {
-		return TaskIsCompletedError
+		return ErrTaskIsCompleted
 	}
 
-	if t.IsCancelled {
-		return TaskIsCanceledError
+	if t.IsCanceled {
+		return ErrTaskIsCanceled
 	}
 
 	// Найти родителя и заменить текущий узел на numberNode
@@ -73,14 +73,14 @@ func (t *Task) Cancel() error {
 	defer t.mu.Unlock()
 
 	if t.IsCompleted {
-		return errors.New("task is completed and cannot be cancelled")
+		return errors.New("task is completed and cannot be canceled")
 	}
 
-	if t.IsCancelled {
-		return errors.New("task is already cancelled")
+	if t.IsCanceled {
+		return errors.New("task is already canceled")
 	}
 
-	t.IsCancelled = true
+	t.IsCanceled = true
 	t.node.isProcessing = false
 
 	return nil
@@ -103,7 +103,7 @@ func compute(left, right float64, operator string) (float64, error) {
 
 		result = left / right
 	default:
-		return 0, fmt.Errorf("invalid or unsupported operator: %s", operator)
+		return 0, fmt.Errorf("invalid or unsupported Operator: %s", operator)
 	}
 
 	return result, nil
@@ -190,7 +190,7 @@ func (e *Expression) GetResult() (float64, error) {
 		return resultNode.value, nil
 	}
 
-	return 0, errors.New("expression result node is not a number")
+	return 0, errors.New("expression result node is not a Number")
 }
 
 func (e *Expression) MarkAsFailed() {
@@ -200,7 +200,9 @@ func (e *Expression) MarkAsFailed() {
 	e.IsFailed = true
 }
 
-// simpleEvaluation - параллельный цикл вычислений
+const pollingInterval = 10 * time.Millisecond
+
+// simpleEvaluation - параллельный цикл вычислений.
 func simpleEvaluation(exp *Expression) error {
 	var wg sync.WaitGroup
 
@@ -214,7 +216,7 @@ func simpleEvaluation(exp *Expression) error {
 		task, ok := exp.GetNextTask()
 		if !ok {
 			// Ждём, если задач временно нет, но AST еще не вычислен
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(pollingInterval)
 
 			task, ok = exp.GetNextTask()
 
@@ -235,7 +237,10 @@ func simpleEvaluation(exp *Expression) error {
 				errChan <- err
 			}
 
-			task.Complete(result)
+			err = task.Complete(result)
+			if err != nil {
+				errChan <- err
+			}
 		}()
 	}
 

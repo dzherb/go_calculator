@@ -13,18 +13,18 @@ type Storage[T any] interface {
 }
 
 type expressionStorage struct {
-	expressions map[uint64]*calculator.Expression
+	expressions map[uint64]*calc.Expression
 	mu          sync.RWMutex
 }
 
-func (s *expressionStorage) Put(expression *calculator.Expression) {
+func (s *expressionStorage) Put(expression *calc.Expression) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.expressions[expression.Id] = expression
 }
 
-func (s *expressionStorage) Get(id uint64) (*calculator.Expression, bool) {
+func (s *expressionStorage) Get(id uint64) (*calc.Expression, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -33,11 +33,11 @@ func (s *expressionStorage) Get(id uint64) (*calculator.Expression, bool) {
 	return exp, ok
 }
 
-func (s *expressionStorage) GetAll() []*calculator.Expression {
+func (s *expressionStorage) GetAll() []*calc.Expression {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	expressions := make([]*calculator.Expression, 0, len(s.expressions))
+	expressions := make([]*calc.Expression, 0, len(s.expressions))
 
 	for _, exp := range s.expressions {
 		expressions = append(expressions, exp)
@@ -47,22 +47,22 @@ func (s *expressionStorage) GetAll() []*calculator.Expression {
 }
 
 var ExpressionStorageInstance = &expressionStorage{
-	expressions: make(map[uint64]*calculator.Expression),
+	expressions: make(map[uint64]*calc.Expression),
 }
 
 type taskStorage struct {
-	tasks map[uint64]*calculator.Task
+	tasks map[uint64]*calc.Task
 	mu    sync.RWMutex
 }
 
-func (s *taskStorage) Put(task *calculator.Task) {
+func (s *taskStorage) Put(task *calc.Task) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.tasks[task.Id] = task
 }
 
-func (s *taskStorage) Get(id uint64) (*calculator.Task, bool) {
+func (s *taskStorage) Get(id uint64) (*calc.Task, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -71,11 +71,11 @@ func (s *taskStorage) Get(id uint64) (*calculator.Task, bool) {
 	return task, ok
 }
 
-func (s *taskStorage) GetAll() []*calculator.Task {
+func (s *taskStorage) GetAll() []*calc.Task {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	tasks := make([]*calculator.Task, 0, len(s.tasks))
+	tasks := make([]*calc.Task, 0, len(s.tasks))
 
 	for _, task := range s.tasks {
 		tasks = append(tasks, task)
@@ -85,5 +85,5 @@ func (s *taskStorage) GetAll() []*calculator.Task {
 }
 
 var TaskStorageInstance = &taskStorage{
-	tasks: make(map[uint64]*calculator.Task),
+	tasks: make(map[uint64]*calc.Task),
 }

@@ -1,7 +1,9 @@
-package calculator
+package calc_test
 
 import (
 	"testing"
+
+	"github.com/dzherb/go_calculator/pkg/calculator"
 )
 
 func TestCalculator(t *testing.T) {
@@ -54,7 +56,7 @@ func TestCalculator(t *testing.T) {
 
 	for _, testCase := range testCasesSuccess {
 		t.Run(testCase.name, func(t *testing.T) {
-			val, err := Calculate(testCase.expression)
+			val, err := calc.Calculate(testCase.expression)
 			if err != nil {
 				t.Fatalf(
 					"successful case %s returns error: %s",
@@ -79,11 +81,11 @@ func TestCalculator(t *testing.T) {
 			expression: "1+a",
 		},
 		{
-			name:       "operator at the end",
+			name:       "Operator at the end",
 			expression: "1+1*",
 		},
 		{
-			name:       "doubling operator",
+			name:       "doubling Operator",
 			expression: "2+2**2",
 		},
 		{
@@ -102,7 +104,7 @@ func TestCalculator(t *testing.T) {
 
 	for _, testCase := range testCasesFail {
 		t.Run(testCase.name, func(t *testing.T) {
-			val, err := Calculate(testCase.expression)
+			val, err := calc.Calculate(testCase.expression)
 			if err == nil {
 				t.Fatalf(
 					"expression %s is invalid but result  %f was obtained",

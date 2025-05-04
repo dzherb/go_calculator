@@ -1,4 +1,4 @@
-package calculator
+package calc
 
 import (
 	"errors"
@@ -6,55 +6,57 @@ import (
 	"unicode"
 )
 
-type symbolMeta struct {
-	isDigit          bool
-	isDigitSeparator bool
-	isOperator       bool
-	isOpeningBracket bool
-	isClosingBracket bool
-}
-
-var validTokens = map[string]symbolMeta{
-	"1": {isDigit: true},
-	"2": {isDigit: true},
-	"3": {isDigit: true},
-	"4": {isDigit: true},
-	"5": {isDigit: true},
-	"6": {isDigit: true},
-	"7": {isDigit: true},
-	"8": {isDigit: true},
-	"9": {isDigit: true},
-	"0": {isDigit: true},
-	".": {isDigitSeparator: true},
-	"(": {isOpeningBracket: true},
-	")": {isClosingBracket: true},
-	"+": {isOperator: true},
-	"-": {isOperator: true},
-	"*": {isOperator: true},
-	"/": {isOperator: true},
-}
-
-type tokenType int
+type symbolType int
 
 const (
-	start tokenType = iota
-	number
+	digit symbolType = iota
+	digitSeparator
 	operator
 	openingBracket
 	closingBracket
 )
 
-type token struct {
-	value     string
-	tokenType tokenType
+var validSymbols = map[string]symbolType{
+	"1": digit,
+	"2": digit,
+	"3": digit,
+	"4": digit,
+	"5": digit,
+	"6": digit,
+	"7": digit,
+	"8": digit,
+	"9": digit,
+	"0": digit,
+	".": digitSeparator,
+	"(": openingBracket,
+	")": closingBracket,
+	"+": operator,
+	"-": operator,
+	"*": operator,
+	"/": operator,
 }
 
-func tokenize(expression string) ([]token, error) {
+type TokenType int
+
+const (
+	start TokenType = iota
+	Number
+	Operator
+	OpeningBracket
+	ClosingBracket
+)
+
+type Token struct {
+	Value     string
+	TokenType TokenType
+}
+
+func tokenize(expression string) ([]Token, error) { //nolint:gocognit,funlen
 	if len(expression) == 0 {
 		return nil, errors.New("expression is empty")
 	}
 
-	res := make([]token, 0)
+	res := make([]Token, 0)
 
 	lastTokenContainsDigitSeparator := false
 	hasWhitespaceAfterLastToken := false
@@ -67,78 +69,83 @@ func tokenize(expression string) ([]token, error) {
 
 		currentSymbol := string(char)
 
-		currentSymbolMeta, ok := validTokens[currentSymbol]
+		currSymbolType, ok := validSymbols[currentSymbol]
 		if !ok {
 			return nil, fmt.Errorf(
-				"expression contains invalid token at position %d: %s",
+				"expression contains invalid Token at position %d: %s",
 				i,
 				string(char),
 			)
 		}
 
-		var lastToken *token
+		var lastToken *Token
 
 		if i == 0 {
-			lastToken = &token{value: "", tokenType: start}
+			lastToken = &Token{Value: "", TokenType: start}
 		} else {
 			lastToken = &res[len(res)-1]
 		}
 
-		var currentTokenType tokenType
+		var currTokenType TokenType
 
-		if currentSymbolMeta.isOperator {
-			currentTokenType = operator
-		} else if currentSymbolMeta.isOpeningBracket {
-			currentTokenType = openingBracket
-		} else if currentSymbolMeta.isClosingBracket {
-			currentTokenType = closingBracket
-		} else {
-			currentTokenType = number
+		switch currSymbolType {
+		case operator:
+			currTokenType = Operator
+		case openingBracket:
+			currTokenType = OpeningBracket
+		case closingBracket:
+			currTokenType = ClosingBracket
+		case digit, digitSeparator:
+			currTokenType = Number
 
-			if hasWhitespaceAfterLastToken && lastToken.tokenType == number {
-				return nil, fmt.Errorf("unexpected whitespace at position %d", i)
+			if hasWhitespaceAfterLastToken && lastToken.TokenType == Number {
+				return nil, fmt.Errorf(
+					"unexpected whitespace at position %d",
+					i,
+				)
 			}
 		}
 
 		hasWhitespaceAfterLastToken = false
 
-		if currentSymbolMeta.isDigit {
-			if lastToken.tokenType == number {
-				lastToken.value = lastToken.value + currentSymbol
+		switch currSymbolType {
+		case digit:
+			if lastToken.TokenType == Number {
+				lastToken.Value += currentSymbol
 
 				continue
 			}
-		} else if currentSymbolMeta.isDigitSeparator {
-			if !(lastToken.tokenType == number) || lastTokenContainsDigitSeparator {
-				return nil, fmt.Errorf("expression contains invalid number")
+		case digitSeparator:
+			if lastToken.TokenType != Number ||
+				lastTokenContainsDigitSeparator {
+				return nil, fmt.Errorf("expression contains invalid Number")
 			}
 
 			lastTokenContainsDigitSeparator = true
-			lastToken.value = lastToken.value + currentSymbol
+			lastToken.Value += currentSymbol
 
 			continue
-		} else {
+		case operator, openingBracket, closingBracket:
 			lastTokenContainsDigitSeparator = false
 		}
 
-		res = append(res, token{
-			value:     currentSymbol,
-			tokenType: currentTokenType,
+		res = append(res, Token{
+			Value:     currentSymbol,
+			TokenType: currTokenType,
 		})
 	}
 
 	return res, nil
 }
 
-// Проверка корректности скобочной последовательности
-func validateBrackets(tokens []token) error {
+// Проверка корректности скобочной последовательности.
+func validateBrackets(tokens []Token) error {
 	balance := 0
 
 	for _, currToken := range tokens {
-		if currToken.tokenType == openingBracket {
-
+		if currToken.TokenType == OpeningBracket { //nolint:staticcheck
 			balance++
-		} else if currToken.tokenType == closingBracket {
+		} else if currToken.TokenType == ClosingBracket {
 			balance--
 
 			if balance < 0 {
@@ -154,68 +161,80 @@ func validateBrackets(tokens []token) error {
 	return nil
 }
 
-// Проверка корректного расположения операторов и операндов
-func validateTokenSequence(tokens []token) error {
+// Проверка корректного расположения операторов и операндов.
+func validateTokenSequence(tokens []Token) error { //nolint:gocognit
 	previousType := start
 
 	for _, currToken := range tokens {
-		if currToken.tokenType == number {
-			if previousType == number {
+		switch currToken.TokenType {
+		case Number:
+			if previousType == Number {
 				return errors.New("no operator between numbers")
 			}
 
-			previousType = number
-		} else if currToken.tokenType == openingBracket {
-			if previousType == number {
+			previousType = Number
+		case OpeningBracket:
+			if previousType == Number {
 				return errors.New("no operator before opening bracket")
 			}
 
-			previousType = openingBracket
-		} else if currToken.tokenType == closingBracket {
-			if previousType == operator || previousType == openingBracket {
+			previousType = OpeningBracket
+		case ClosingBracket:
+			if previousType == Operator || previousType == OpeningBracket {
 				return errors.New("operator before closing bracket")
 			}
 
-			previousType = closingBracket
-		} else {
-			if (previousType == operator || previousType == start) && currToken.value != "-" {
+			previousType = ClosingBracket
+		case Operator, start:
+			if (previousType == Operator || previousType == start) &&
+				currToken.Value != "-" {
 				return errors.New("unexpected operator")
 			}
 
-			previousType = operator
+			previousType = Operator
 		}
 	}
 
-	if previousType == operator {
-		return errors.New("expression ends with operator")
+	if previousType == Operator {
+		return errors.New("expression ends with Operator")
 	}
 
 	return nil
 }
 
-// Объединяет токен минуса с токеном числа, если это унарный минус
-func preprocessTokens(tokens []token) []token {
-	var result []token
+// Объединяет токен минуса с токеном числа, если это унарный минус.
+func preprocessTokens(tokens []Token) []Token {
+	var result []Token
 
 	nextNumberIsNegative := false
 
 	for i := 0; i < len(tokens); i++ {
 		currToken := tokens[i]
 
+		var isAfterOpenBr bool
+
+		var isAfterOp bool
+
+		if i > 0 {
+			isAfterOpenBr = tokens[i-1].TokenType == OpeningBracket
+			isAfterOp = tokens[i-1].TokenType == Operator
+		}
+
 		// Унарный минус, если он:
 		// 1. В начале выражения
 		// 2. После открывающей скобки (
 		// 3. После оператора (+, -, *, /)
-		if currToken.value == "-" &&
-			(i == 0 || tokens[i-1].tokenType == openingBracket || tokens[i-1].tokenType == operator) {
+		if currToken.Value == "-" &&
+			(i == 0 || isAfterOpenBr || isAfterOp) {
 			nextNumberIsNegative = true
+
 			continue
 		}
 
-		if currToken.tokenType == number && nextNumberIsNegative {
-			negativeNumberToken := token{
-				tokenType: number,
-				value:     tokens[i-1].value + currToken.value,
+		if currToken.TokenType == Number && nextNumberIsNegative {
+			negativeNumberToken := Token{
+				TokenType: Number,
+				Value:     tokens[i-1].Value + currToken.Value,
 			}
 			result = append(result, negativeNumberToken)
 		} else {
@@ -228,7 +247,7 @@ func preprocessTokens(tokens []token) []token {
 	return result
 }
 
-func Tokenize(expression string) ([]token, error) {
+func Tokenize(expression string) ([]Token, error) {
 	tokens, err := tokenize(expression)
 	if err != nil {
 		return nil, err

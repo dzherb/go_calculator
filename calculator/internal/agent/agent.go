@@ -13,19 +13,27 @@ import (
 
 var workerIdCounter = atomic.Uint64{}
 
+const workerStartDelay = 100 * time.Millisecond
+
 func (a *Application) Run() {
 	for range a.config.TotalWorkers {
 		// Запускаем вокреров с небольшой задержкой,
 		// так будем более равномерно обращаться к оркестратору
 		go a.runWorker()
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(workerStartDelay)
 	}
 
 	waitUntilTermination()
 }
 
+const pollingInterval = 400 * time.Millisecond
+
 func (a *Application) runWorker() {
-	orchestratorBaseUrl := "http://" + a.config.orchestratorHost + ":" + a.config.orchestratorPort
+	orchestratorBaseUrl := "http://" +
+		a.config.orchestratorHost +
+		":" +
+		a.config.orchestratorPort
+
 	worker := a.newAgentWorker(orchestratorBaseUrl)
 
 	slog.Info(
@@ -39,7 +47,7 @@ func (a *Application) runWorker() {
 		if err != nil {
 			// Не хотим делать подряд неисчислимое количество запросов к оркестратору,
 			// если прямо сейчас не смогли получить задачу, поэтому спим
-			time.Sleep(400 * time.Millisecond)
+			time.Sleep(pollingInterval)
 			continue
 		}
 
@@ -68,12 +76,23 @@ func (w *agentWorker) processTask(task *taskResponse) {
 	res, err := compute(task)
 	if err != nil {
 		errorReq := &taskErrorRequest{Id: task.Id, Error: err.Error()}
-		err = w.sendTaskResult(errorReq)
+
 		slog.Info(
 			"Failed to compute a task",
 			slog.Uint64("taskId", task.Id),
 			slog.Uint64("workerId", w.id),
 		)
+
+		err = w.sendTaskResult(errorReq)
+		if err != nil {
+			slog.Info(
+				"Failed to send task result",
+				slog.Uint64("taskId", task.Id),
+				slog.Uint64("workerId", w.id),
+			)
+
+			return
+		}
 
 		return
 	}
@@ -100,7 +119,7 @@ type taskResponse struct {
 	Arg1          float64 `json:"arg1"`
 	Arg2          float64 `json:"arg2"`
 	Operation     string  `json:"operation"`
-	OperationTime uint64  `json:"operation_time"`
+	OperationTime uint32  `json:"operation_time"`
 }
 
 func (w *agentWorker) getTask() (*taskResponse, error) {

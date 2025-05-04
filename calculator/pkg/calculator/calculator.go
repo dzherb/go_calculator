@@ -1,4 +1,4 @@
-package calculator
+package calc
 
 func Calculate(expression string) (float64, error) {
 	exp, err := NewExpression(expression)

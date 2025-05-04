@@ -1,4 +1,4 @@
-package calculator
+package calc
 
 import (
 	"fmt"
@@ -46,6 +46,7 @@ func (o *operatorNode) nextReadyForProcessingNode() (*operatorNode, bool) {
 
 	if leftOK && rightOK {
 		o.isProcessing = true
+
 		return o, true
 	}
 
@@ -65,21 +66,22 @@ func (o *operatorNode) nextReadyForProcessingNode() (*operatorNode, bool) {
 	return nil, false
 }
 
-// Переводит инфиксное выражение в RPN (обратную польскую нотацию)
-func shuntingYard(tokens []token) []token {
-	precedence := map[string]int{"+": 1, "-": 1, "*": 2, "/": 2}
+// Переводит инфиксное выражение в RPN (обратную польскую нотацию).
+func shuntingYard(tokens []Token) []Token { //nolint:gocognit
+	precedence := map[string]int{"+": 1, "-": 1, "*": 2, "/": 2} //nolint:mnd
 
-	var output []token
+	var output []Token
 
-	var operators []token
+	var operators []Token
 
 	for _, currToken := range tokens {
-		if currToken.tokenType == number {
+		switch currToken.TokenType { //nolint:exhaustive
+		case Number:
 			output = append(output, currToken)
-		} else if currToken.tokenType == operator {
+		case Operator:
 			for len(operators) > 0 {
 				top := operators[len(operators)-1]
-				if precedence[top.value] >= precedence[currToken.value] {
+				if precedence[top.Value] >= precedence[currToken.Value] {
 					output = append(output, top)
 					operators = operators[:len(operators)-1]
 				} else {
@@ -88,15 +90,17 @@ func shuntingYard(tokens []token) []token {
 			}
 
 			operators = append(operators, currToken)
-		} else if currToken.tokenType == openingBracket {
+		case OpeningBracket:
 			operators = append(operators, currToken)
-		} else if currToken.tokenType == closingBracket {
-			for len(operators) > 0 && operators[len(operators)-1].tokenType != openingBracket {
+		case ClosingBracket:
+			for len(operators) > 0 &&
+				operators[len(operators)-1].TokenType != OpeningBracket {
 				output = append(output, operators[len(operators)-1])
 				operators = operators[:len(operators)-1]
 			}
 
-			if len(operators) > 0 && operators[len(operators)-1].tokenType == openingBracket {
+			if len(operators) > 0 &&
+				operators[len(operators)-1].TokenType == OpeningBracket {
 				operators = operators[:len(operators)-1]
 			}
 		}
@@ -111,20 +115,20 @@ func shuntingYard(tokens []token) []token {
 }
 
 // Строит абстрактое ситактическое дерево на основе
-// последовательности токенов в обратной польской нотации
-func buildAST(rpnOrganizedTokens []token) node {
+// последовательности токенов в обратной польской нотации.
+func buildAST(rpnOrganizedTokens []Token) node {
 	var stack []node
 
 	for _, currToken := range rpnOrganizedTokens {
-		if currToken.tokenType == number {
-			val, _ := strconv.ParseFloat(currToken.value, 64)
+		if currToken.TokenType == Number {
+			val, _ := strconv.ParseFloat(currToken.Value, 64)
 			stack = append(stack, &numberNode{value: val})
 		} else {
 			right := stack[len(stack)-1]
 			left := stack[len(stack)-2]
 			stack = stack[:len(stack)-2]
 			stack = append(stack, &operatorNode{
-				operator: currToken.value,
+				operator: currToken.Value,
 				left:     left,
 				right:    right,
 			})

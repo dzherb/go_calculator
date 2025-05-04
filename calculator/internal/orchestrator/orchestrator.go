@@ -10,8 +10,8 @@ import (
 
 type Orchestrator struct {
 	app               *Application
-	expressionStorage Storage[*calculator.Expression]
-	taskStorage       Storage[*calculator.Task]
+	expressionStorage Storage[*calc.Expression]
+	taskStorage       Storage[*calc.Task]
 }
 
 var orchestrator = Orchestrator{
@@ -20,7 +20,7 @@ var orchestrator = Orchestrator{
 }
 
 func (o *Orchestrator) CreateExpression(expression string) (uint64, error) {
-	exp, err := calculator.NewExpression(expression)
+	exp, err := calc.NewExpression(expression)
 	if err != nil {
 		return 0, err
 	}
@@ -33,7 +33,7 @@ func (o *Orchestrator) CreateExpression(expression string) (uint64, error) {
 func (o *Orchestrator) GetExpression(id uint64) (*ExpressionResponse, error) {
 	exp, ok := o.expressionStorage.Get(id)
 	if !ok {
-		return nil, expressionNotFoundError
+		return nil, errExpressionNotFound
 	}
 
 	return newExpressionResponse(exp)
@@ -82,13 +82,13 @@ func (o *Orchestrator) StartProcessingNextTask() (*TaskResponse, error) {
 		return newTaskResponse(task)
 	}
 
-	return nil, noTasksToProcessError
+	return nil, errNoTasksToProcess
 }
 
 func (o *Orchestrator) CompleteTask(taskId uint64, result float64) error {
 	task, ok := o.taskStorage.Get(taskId)
 	if !ok {
-		return taskNotFoundError
+		return errTaskNotFound
 	}
 
 	err := task.Complete(result)
@@ -99,20 +99,26 @@ func (o *Orchestrator) CompleteTask(taskId uint64, result float64) error {
 func (o *Orchestrator) CancelTask(id uint64) error {
 	task, ok := o.taskStorage.Get(id)
 	if !ok {
-		return taskNotFoundError
+		return errTaskNotFound
 	}
 
 	return task.Cancel()
 }
 
-func (o *Orchestrator) OnCalculationFailure(taskId uint64) {
+func (o *Orchestrator) OnCalculationFailure(taskId uint64) error {
 	task, ok := o.taskStorage.Get(taskId)
 	if !ok {
-		return
+		return nil
 	}
 
 	task.GetExpression().MarkAsFailed()
-	task.Cancel()
+
+	err := task.Cancel()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type expressionStatus string
@@ -131,16 +137,17 @@ type ExpressionResponse struct {
 }
 
 func newExpressionResponse(
-	expression *calculator.Expression,
+	expression *calc.Expression,
 ) (*ExpressionResponse, error) {
 	var status expressionStatus
 
 	var result *float64
 
-	if expression.IsFailed {
+	switch {
+	case expression.IsFailed:
 		status = failed
 		result = nil
-	} else if expression.IsEvaluated() {
+	case expression.IsEvaluated():
 		status = processed
 
 		r, err := expression.GetResult()
@@ -149,9 +156,9 @@ func newExpressionResponse(
 		}
 
 		result = &r
-	} else if expression.IsProcessing {
+	case expression.IsProcessing:
 		status = processing
-	} else {
+	default:
 		status = waitingForProcessing
 	}
 
@@ -170,7 +177,7 @@ type TaskResponse struct {
 	OperationTime time.Duration `json:"operation_time"`
 }
 
-func newTaskResponse(task *calculator.Task) (*TaskResponse, error) {
+func newTaskResponse(task *calc.Task) (*TaskResponse, error) {
 	arg1, arg2 := task.GetArguments()
 	operator := task.GetOperator()
 

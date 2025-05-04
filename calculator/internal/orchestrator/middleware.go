@@ -26,7 +26,10 @@ func commonMiddleware(next http.Handler) http.Handler {
 
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().
-			Set("Access-Control-Allow-Headers", "Content-Type,access-control-allow-origin, access-control-allow-headers")
+			Set(
+				"Access-Control-Allow-Headers",
+				"Content-Type,access-control-allow-origin, access-control-allow-headers",
+			)
 		w.Header().Set("Content-Type", "application/json")
 
 		next.ServeHTTP(w, r)
@@ -53,7 +56,6 @@ func ensureMethodsMiddleware(
 					strings.Join(methods, ", "),
 				),
 			)
-			return
 		})
 	}
 }

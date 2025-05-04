@@ -1,72 +1,74 @@
-package calculator
+package calc_test
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/dzherb/go_calculator/pkg/calculator"
 )
 
 func TestTokenizer(t *testing.T) {
 	testCases := []struct {
 		expression  string
-		expected    []token
+		expected    []calc.Token
 		expectError bool
 	}{
 		{
 			expression:  "1",
-			expected:    []token{{value: "1", tokenType: number}},
+			expected:    []calc.Token{{Value: "1", TokenType: calc.Number}},
 			expectError: false,
 		},
 		{
 			expression: "1+2-3",
-			expected: []token{
-				{value: "1", tokenType: number},
-				{value: "+", tokenType: operator},
-				{value: "2", tokenType: number},
-				{value: "-", tokenType: operator},
-				{value: "3", tokenType: number},
+			expected: []calc.Token{
+				{Value: "1", TokenType: calc.Number},
+				{Value: "+", TokenType: calc.Operator},
+				{Value: "2", TokenType: calc.Number},
+				{Value: "-", TokenType: calc.Operator},
+				{Value: "3", TokenType: calc.Number},
 			},
 			expectError: false,
 		},
 		{
 			expression: "1+2-3.4",
-			expected: []token{
-				{value: "1", tokenType: number},
-				{value: "+", tokenType: operator},
-				{value: "2", tokenType: number},
-				{value: "-", tokenType: operator},
-				{value: "3.4", tokenType: number},
+			expected: []calc.Token{
+				{Value: "1", TokenType: calc.Number},
+				{Value: "+", TokenType: calc.Operator},
+				{Value: "2", TokenType: calc.Number},
+				{Value: "-", TokenType: calc.Operator},
+				{Value: "3.4", TokenType: calc.Number},
 			},
 			expectError: false,
 		},
 		{
 			expression: "1+(242-3.4)/33",
-			expected: []token{
-				{value: "1", tokenType: number},
-				{value: "+", tokenType: operator},
-				{value: "(", tokenType: openingBracket},
-				{value: "242", tokenType: number},
-				{value: "-", tokenType: operator},
-				{value: "3.4", tokenType: number},
-				{value: ")", tokenType: closingBracket},
-				{value: "/", tokenType: operator},
-				{value: "33", tokenType: number},
+			expected: []calc.Token{
+				{Value: "1", TokenType: calc.Number},
+				{Value: "+", TokenType: calc.Operator},
+				{Value: "(", TokenType: calc.OpeningBracket},
+				{Value: "242", TokenType: calc.Number},
+				{Value: "-", TokenType: calc.Operator},
+				{Value: "3.4", TokenType: calc.Number},
+				{Value: ")", TokenType: calc.ClosingBracket},
+				{Value: "/", TokenType: calc.Operator},
+				{Value: "33", TokenType: calc.Number},
 			},
 			expectError: false,
 		},
 		{
 			expression: "45*4+(2.42-3.4)/33",
-			expected: []token{
-				{value: "45", tokenType: number},
-				{value: "*", tokenType: operator},
-				{value: "4", tokenType: number},
-				{value: "+", tokenType: operator},
-				{value: "(", tokenType: openingBracket},
-				{value: "2.42", tokenType: number},
-				{value: "-", tokenType: operator},
-				{value: "3.4", tokenType: number},
-				{value: ")", tokenType: closingBracket},
-				{value: "/", tokenType: operator},
-				{value: "33", tokenType: number},
+			expected: []calc.Token{
+				{Value: "45", TokenType: calc.Number},
+				{Value: "*", TokenType: calc.Operator},
+				{Value: "4", TokenType: calc.Number},
+				{Value: "+", TokenType: calc.Operator},
+				{Value: "(", TokenType: calc.OpeningBracket},
+				{Value: "2.42", TokenType: calc.Number},
+				{Value: "-", TokenType: calc.Operator},
+				{Value: "3.4", TokenType: calc.Number},
+				{Value: ")", TokenType: calc.ClosingBracket},
+				{Value: "/", TokenType: calc.Operator},
+				{Value: "33", TokenType: calc.Number},
 			},
 			expectError: false,
 		},
@@ -108,7 +110,7 @@ func TestTokenizer(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.expression, func(t *testing.T) {
-			res, err := tokenize(testCase.expression)
+			res, err := calc.TokenizeInternal(testCase.expression)
 			if err != nil && !testCase.expectError {
 				t.Fatalf(
 					"expression %s is valid but error returned: %s",
