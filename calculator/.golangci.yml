@@ -1,0 +1,81 @@
+version: "2"
+linters:
+  enable:
+    - goconst
+    - misspell
+    - nakedret
+    - prealloc
+    - revive
+    - unconvert
+    - unparam
+    - nestif
+    - tagalign
+    - mnd
+    - gosec
+    - govet
+    - dupl
+    - errorlint
+    - exhaustive
+    - forbidigo
+    - funcorder
+    - funlen
+    - gocognit
+    - goconst
+    - gocritic
+    - godot
+    - godox
+    - govet
+    - iface
+    - lll
+    - nolintlint
+    - staticcheck
+    - tagalign
+    - testpackage
+    - usestdlibvars
+    - usetesting
+    - unconvert
+    - unconvert
+    - unused
+    - whitespace
+    - wsl
+  settings:
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: redundant-build-tag
+    gocognit:
+      min-complexity: 15
+    lll:
+      line-length: 80
+    tagalign:
+      sort: false
+  exclusions:
+    generated: lax
+    rules:
+      - path: (.+)\.go$
+        text: G104
+      - path: _test.go
+        linters:
+          - funlen
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+    - golines
+    - gci
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+  settings:
+    golines:
+      max-len: 80
