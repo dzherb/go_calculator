@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (a *Application) ServeGRPC() {
+func (a *App) ServeGRPC(ctx context.Context) error {
 	addr := a.config.Host + ":" + a.config.GRPCPort
 
 	lis, err := net.Listen("tcp", a.config.Host+":"+a.config.GRPCPort)
@@ -24,13 +24,27 @@ func (a *Application) ServeGRPC() {
 
 	s := grpc.NewServer()
 
+	go func() {
+		<-ctx.Done()
+		s.GracefulStop()
+	}()
+
 	pb.RegisterTaskServiceServer(s, &grpcServer{})
 
 	slog.Info("GRPC server is listening on " + addr)
 
-	if err = s.Serve(lis); err != nil {
-		slog.Error("failed to start grpc server", "error", err)
+	err = s.Serve(lis)
+
+	if err != nil {
+		slog.Error(
+			"GRPC server stopped with an error",
+			"error", err,
+		)
 	}
+
+	slog.Info("GRPC server stopped")
+
+	return nil
 }
 
 type grpcServer struct {

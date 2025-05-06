@@ -1,23 +1,19 @@
 package main
 
 import (
-	"log/slog"
 	"os"
 
 	"github.com/dzherb/go_calculator/internal/orchestrator"
+	"github.com/dzherb/go_calculator/pkg/logger"
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	slog.SetDefault(logger)
+	logger.Init()
 
 	app := orchestrator.New()
 
-	go app.ServeGRPC()
-
-	err := app.ServeHTTP()
+	err := app.Serve()
 	if err != nil {
-		slog.Error("server stopped", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 }

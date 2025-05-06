@@ -51,19 +51,6 @@ func ConfigFromEnv() *Config {
 	return config
 }
 
-type Application struct {
-	config *Config
-}
-
-func New() *Application {
-	app := &Application{
-		config: ConfigFromEnv(),
-	}
-	orchestrator.app = app
-
-	return app
-}
-
 func getDurationInMs(duration string) time.Duration {
 	t, _ := strconv.Atoi(duration)
 	return time.Duration(t) * time.Millisecond

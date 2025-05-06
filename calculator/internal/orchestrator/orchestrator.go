@@ -10,7 +10,7 @@ import (
 )
 
 type Orchestrator struct {
-	app               *Application
+	app               *App
 	expressionStorage Storage[*calc.Expression]
 	taskStorage       Storage[*calc.Task]
 }
