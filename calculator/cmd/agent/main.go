@@ -1,15 +1,12 @@
 package main
 
 import (
-	"log/slog"
-	"os"
-
 	"github.com/dzherb/go_calculator/internal/agent"
+	"github.com/dzherb/go_calculator/pkg/logger"
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	slog.SetDefault(logger)
+	logger.Init()
 
 	app := agent.New()
 	app.Run()

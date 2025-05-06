@@ -1,6 +1,8 @@
 package orchestrator
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -10,7 +12,7 @@ import (
 const readTimeout = 15 * time.Second
 const writeTimeout = 15 * time.Second
 
-func (a *Application) ServeHTTP() error {
+func (a *App) ServeHTTP(ctx context.Context) error {
 	mux := http.NewServeMux()
 	registerHandlers(mux)
 
@@ -23,9 +25,31 @@ func (a *Application) ServeHTTP() error {
 		WriteTimeout: writeTimeout,
 	}
 
+	go func() {
+		<-ctx.Done()
+
+		err := srv.Shutdown(ctx)
+		if err != nil {
+			slog.Error(err.Error())
+		}
+	}()
+
 	slog.Info(fmt.Sprintf("HTTP server is listening on %s", addr))
 
-	return srv.ListenAndServe()
+	err := srv.ListenAndServe()
+
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		slog.Error(
+			"HTTP server stopped with an error",
+			"error", err,
+		)
+
+		return err
+	}
+
+	slog.Info("HTTP server stopped")
+
+	return nil
 }
 
 func registerHandlers(mux *http.ServeMux) {
