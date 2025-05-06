@@ -17,10 +17,15 @@ jobs:
           go-version: "1.24.x"
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v8
+        with:
+          working-directory: ./calculator
 
   test:
     name: Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./calculator
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
