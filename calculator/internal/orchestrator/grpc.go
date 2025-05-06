@@ -3,14 +3,15 @@ package orchestrator
 import (
 	"context"
 	"errors"
-	pb "github.com/dzherb/go_calculator/internal/gen"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"log"
 	"log/slog"
 	"net"
 	"strconv"
+
+	pb "github.com/dzherb/go_calculator/internal/gen"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (a *Application) ServeGRPC() {
@@ -36,7 +37,10 @@ type grpcServer struct {
 	pb.UnimplementedTaskServiceServer
 }
 
-func (gs *grpcServer) GetTask(_ context.Context, _ *pb.GetTaskRequest) (*pb.TaskToProcess, error) {
+func (gs *grpcServer) GetTask(
+	_ context.Context,
+	_ *pb.GetTaskRequest,
+) (*pb.TaskToProcess, error) {
 	task, err := orchestrator.StartProcessingNextTask()
 	if err != nil {
 		return nil, status.Error(codes.ResourceExhausted, err.Error())
@@ -45,7 +49,10 @@ func (gs *grpcServer) GetTask(_ context.Context, _ *pb.GetTaskRequest) (*pb.Task
 	return task, nil
 }
 
-func (gs *grpcServer) AddResult(_ context.Context, task *pb.TaskResult) (*pb.AddResultResponse, error) {
+func (gs *grpcServer) AddResult(
+	_ context.Context,
+	task *pb.TaskResult,
+) (*pb.AddResultResponse, error) {
 	if task.Error != "" {
 		slog.Error(
 			"Agent returned calculation error",
@@ -70,7 +77,8 @@ func (gs *grpcServer) AddResult(_ context.Context, task *pb.TaskResult) (*pb.Add
 		if !errors.Is(err, errTaskNotFound) {
 			slog.Warn(
 				"Agent tried to complete a task that is already completed or canceled",
-				"error", err,
+				"error",
+				err,
 			)
 		}
 

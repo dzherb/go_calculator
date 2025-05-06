@@ -11,16 +11,13 @@ type OrchestratorConn struct {
 	closeFn func() error
 }
 
-func (c *OrchestratorConn) Close() error {
-	return c.closeFn()
-}
-
 func NewOrchestratorConn(cfg *Config) (*OrchestratorConn, error) {
 	addr := cfg.orchestratorHost + ":" + cfg.orchestratorPort
 	conn, err := grpc.NewClient(
 		addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -28,6 +25,10 @@ func NewOrchestratorConn(cfg *Config) (*OrchestratorConn, error) {
 	conn.Connect()
 
 	return &OrchestratorConn{conn: conn, closeFn: conn.Close}, nil
+}
+
+func (c *OrchestratorConn) Close() error {
+	return c.closeFn()
 }
 
 func OrchestratorClient(conn *OrchestratorConn) pb.TaskServiceClient {

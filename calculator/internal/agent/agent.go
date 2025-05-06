@@ -1,11 +1,12 @@
 package agent
 
 import (
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"log/slog"
 	"sync/atomic"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var workerIdCounter = atomic.Uint64{}
@@ -80,6 +81,7 @@ func (a *Agent) runWorker() {
 
 			// No tasks available, sleep for a while
 			time.Sleep(pollingInterval)
+
 			continue
 		}
 

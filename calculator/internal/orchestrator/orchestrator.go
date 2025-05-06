@@ -2,10 +2,10 @@ package orchestrator
 
 import (
 	"fmt"
-	pb "github.com/dzherb/go_calculator/internal/gen"
 	"log/slog"
 	"time"
 
+	pb "github.com/dzherb/go_calculator/internal/gen"
 	"github.com/dzherb/go_calculator/pkg/calculator"
 )
 
@@ -175,11 +175,13 @@ func newTaskToProcess(task *calc.Task) (*pb.TaskToProcess, error) {
 	operator := task.GetOperator()
 
 	return &pb.TaskToProcess{
-		Id:            task.Id,
-		Arg1:          arg1,
-		Arg2:          arg2,
-		Operation:     operator,
-		OperationTime: uint32(orchestrator.getOperationTime(operator)),
+		Id:        task.Id,
+		Arg1:      arg1,
+		Arg2:      arg2,
+		Operation: operator,
+		OperationTime: uint32( //nolint:gosec
+			orchestrator.getOperationTime(operator),
+		),
 	}, nil
 }
 

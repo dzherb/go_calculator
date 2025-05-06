@@ -62,10 +62,12 @@ func (w *agentWorker) processTask(task *pb.TaskToProcess) {
 	)
 }
 
+const grpcTimeout = time.Second * 10
+
 func (w *agentWorker) getTask() (*pb.TaskToProcess, error) {
 	client := w.client()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), grpcTimeout)
 	defer cancel()
 
 	task, err := client.GetTask(ctx, &pb.GetTaskRequest{})
@@ -79,7 +81,7 @@ func (w *agentWorker) getTask() (*pb.TaskToProcess, error) {
 func (w *agentWorker) sendTaskResult(task *pb.TaskResult) error {
 	client := w.client()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), grpcTimeout)
 	defer cancel()
 
 	_, err := client.AddResult(ctx, task)
