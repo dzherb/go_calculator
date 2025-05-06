@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"fmt"
+	pb "github.com/dzherb/go_calculator/internal/gen"
 	"log/slog"
 	"time"
 
@@ -54,7 +55,7 @@ func (o *Orchestrator) GetAllExpressions() ([]*ExpressionResponse, error) {
 	return results, nil
 }
 
-func (o *Orchestrator) StartProcessingNextTask() (*TaskResponse, error) {
+func (o *Orchestrator) StartProcessingNextTask() (*pb.TaskToProcess, error) {
 	for _, exp := range o.expressionStorage.GetAll() {
 		task, ok := exp.GetNextTask()
 		if !ok {
@@ -79,7 +80,7 @@ func (o *Orchestrator) StartProcessingNextTask() (*TaskResponse, error) {
 			)
 		}()
 
-		return newTaskResponse(task)
+		return newTaskToProcess(task)
 	}
 
 	return nil, errNoTasksToProcess
@@ -169,24 +170,16 @@ func newExpressionResponse(
 	}, nil
 }
 
-type TaskResponse struct {
-	Id            uint64        `json:"id"`
-	Arg1          float64       `json:"arg1"`
-	Arg2          float64       `json:"arg2"`
-	Operation     string        `json:"operation"`
-	OperationTime time.Duration `json:"operation_time"`
-}
-
-func newTaskResponse(task *calc.Task) (*TaskResponse, error) {
+func newTaskToProcess(task *calc.Task) (*pb.TaskToProcess, error) {
 	arg1, arg2 := task.GetArguments()
 	operator := task.GetOperator()
 
-	return &TaskResponse{
+	return &pb.TaskToProcess{
 		Id:            task.Id,
 		Arg1:          arg1,
 		Arg2:          arg2,
 		Operation:     operator,
-		OperationTime: orchestrator.getOperationTime(operator),
+		OperationTime: uint32(orchestrator.getOperationTime(operator)),
 	}, nil
 }
 

@@ -13,7 +13,9 @@ func main() {
 
 	app := orchestrator.New()
 
-	err := app.RunServer()
+	go app.ServeGRPC()
+
+	err := app.ServeHTTP()
 	if err != nil {
 		slog.Error("server stopped", slog.String("error", err.Error()))
 		os.Exit(1)

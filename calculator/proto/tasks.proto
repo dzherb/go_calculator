@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package tasks;
 
-option go_package = "github.com/dzherb/go_calculator";
+option go_package = "github.com/dzherb/go_calculator/gen/proto";
 
 service TaskService {
   rpc GetTask (GetTaskRequest) returns (TaskToProcess);
@@ -13,15 +13,16 @@ message GetTaskRequest {}
 
 message TaskToProcess {
   uint64 id = 1;
-  float arg1 = 2;
-  float arg2 = 3;
+  double arg1 = 2;
+  double arg2 = 3;
   string operation = 4;
   uint32 operation_time = 5;
 }
 
 message TaskResult {
   uint64 id = 1;
-  float result = 2;
+  double result = 2;
+  string error = 3;
 }
 
 message AddResultResponse {}

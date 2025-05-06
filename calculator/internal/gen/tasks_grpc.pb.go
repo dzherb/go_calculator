@@ -4,7 +4,7 @@
 // - protoc             v5.29.2
 // source: tasks.proto
 
-package go_calculator
+package proto
 
 import (
 	context "context"

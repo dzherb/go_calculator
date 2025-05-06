@@ -17,22 +17,15 @@ func ConfigFromEnv() *Config {
 
 	config.orchestratorHost = common.EnvOrDefault(
 		"ORCHESTRATOR_HOST",
-		"localhost",
+		"0.0.0.0",
 	)
-	config.orchestratorPort = common.EnvOrDefault("ORCHESTRATOR_PORT", "8080")
+	config.orchestratorPort = common.EnvOrDefault(
+		"ORCHESTRATOR_GRPC_PORT",
+		"8081",
+	)
 
 	workers := common.EnvOrDefault("COMPUTING_POWER", "4")
 	config.TotalWorkers, _ = strconv.Atoi(workers)
 
 	return config
-}
-
-type Application struct {
-	config *Config
-}
-
-func New() *Application {
-	return &Application{
-		config: ConfigFromEnv(),
-	}
 }

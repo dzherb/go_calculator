@@ -9,8 +9,9 @@ import (
 )
 
 type Config struct {
-	Addr               string
+	Host               string
 	Port               string
+	GRPCPort           string
 	AdditionTime       time.Duration
 	SubtractionTime    time.Duration
 	MultiplicationTime time.Duration
@@ -21,8 +22,9 @@ type Config struct {
 func ConfigFromEnv() *Config {
 	config := new(Config)
 
-	config.Addr = common.EnvOrDefault("ORCHESTRATOR_HOST", "127.0.0.1")
-	config.Port = common.EnvOrDefault("ORCHESTRATOR_PORT", "8080")
+	config.Host = common.EnvOrDefault("ORCHESTRATOR_HOST", "0.0.0.0")
+	config.Port = common.EnvOrDefault("ORCHESTRATOR_HTTP_PORT", "8080")
+	config.GRPCPort = common.EnvOrDefault("ORCHESTRATOR_GRPC_PORT", "8081")
 
 	if addTime, exists := os.LookupEnv("TIME_ADDITION_MS"); exists {
 		config.AdditionTime = getDurationInMs(addTime)
