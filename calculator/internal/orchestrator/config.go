@@ -17,6 +17,8 @@ type Config struct {
 	MultiplicationTime time.Duration
 	DivisionTime       time.Duration
 	TaskMaxProcessTime time.Duration
+	SecretKey          string
+	AccessTokenTTL     time.Duration
 }
 
 func ConfigFromEnv() *Config {
@@ -48,10 +50,21 @@ func ConfigFromEnv() *Config {
 		config.TaskMaxProcessTime = 1 * time.Minute
 	}
 
+	config.SecretKey = common.EnvOrDefault("SECRET_KEY", "insecure")
+
+	if accessTokenTTL, exists := os.LookupEnv("ACCESS_TOKEN_TTL"); exists {
+		config.AccessTokenTTL = getDurationInMin(accessTokenTTL)
+	}
+
 	return config
 }
 
 func getDurationInMs(duration string) time.Duration {
 	t, _ := strconv.Atoi(duration)
 	return time.Duration(t) * time.Millisecond
+}
+
+func getDurationInMin(duration string) time.Duration {
+	t, _ := strconv.Atoi(duration)
+	return time.Duration(t) * time.Minute
 }
