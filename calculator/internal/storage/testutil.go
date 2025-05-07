@@ -98,8 +98,8 @@ func RunTestsWithTempDB(testRunner func() int) int { //nolint:funlen
 }
 
 func getHostPort(resource *dockertest.Resource, id string) (string, error) {
-	dockerURL := os.Getenv("DOCKER_HOST")
-	if dockerURL == "" {
+	dockerURL, ok := os.LookupEnv("DOCKER_HOST")
+	if !ok {
 		return resource.GetHostPort(id), nil
 	}
 
