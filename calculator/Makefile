@@ -21,3 +21,7 @@ fmt:
 .PHONY: proto
 proto:
 	@./scripts/gen_proto.sh
+
+.PHONY: migrations
+migrations:
+	@./scripts/migrations.sh
