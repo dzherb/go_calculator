@@ -4,7 +4,7 @@ CREATE TABLE users
 (
     id            SERIAL PRIMARY KEY,
     username      VARCHAR(32) UNIQUE        NOT NULL,
-    password_hash CHAR(32)                  NOT NULL,
+    password_hash CHAR(60)                  NOT NULL,
     created_at    TIMESTAMPTZ DEFAULT now() NOT NULL,
     updated_at    TIMESTAMPTZ DEFAULT now() NOT NULL
 );
