@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -23,7 +25,7 @@ import (
 // PostgreSQL database for testing.
 //
 // Returns the exit code from testRunner or 1 on setup failure.
-func RunTestsWithTempDB(testRunner func() int) int {
+func RunTestsWithTempDB(testRunner func() int) int { //nolint:funlen
 	dockerPool, err := dockertest.NewPool("")
 	if err != nil {
 		slog.Error("Could not construct dockerPool", "error", err)
@@ -54,7 +56,12 @@ func RunTestsWithTempDB(testRunner func() int) int {
 		return 1
 	}
 
-	hostAndPort := resource.GetHostPort("5432/tcp")
+	hostAndPort, err := getHostPort(resource, "5432/tcp")
+	if err != nil {
+		slog.Error("Could not get host and port", "error", err)
+		return 1
+	}
+
 	databaseUrl := fmt.Sprintf(
 		"postgres://postgres:secret@%s/go_test?sslmode=disable",
 		hostAndPort,
@@ -88,6 +95,20 @@ func RunTestsWithTempDB(testRunner func() int) int {
 	}()
 
 	return testRunner()
+}
+
+func getHostPort(resource *dockertest.Resource, id string) (string, error) {
+	dockerURL := os.Getenv("DOCKER_HOST")
+	if dockerURL == "" {
+		return resource.GetHostPort(id), nil
+	}
+
+	u, err := url.Parse(dockerURL)
+	if err != nil {
+		return "", err
+	}
+
+	return u.Hostname() + ":" + resource.GetPort(id), nil
 }
 
 // RunTestsWithMigratedDB applies all up migrations,
