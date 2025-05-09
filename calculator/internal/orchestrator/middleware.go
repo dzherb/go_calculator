@@ -1,11 +1,14 @@
 package orchestrator
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"strings"
+
+	"github.com/dzherb/go_calculator/pkg/security"
 )
 
 func commonMiddleware(next http.Handler) http.Handler {
@@ -58,4 +61,32 @@ func ensureMethodsMiddleware(
 			)
 		})
 	}
+}
+
+type ctxKey string
+
+const UserIDKey ctxKey = "userID"
+const TokenPrefix = "Bearer "
+
+func AuthRequired(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, TokenPrefix) {
+			w.WriteHeader(http.StatusUnauthorized)
+			writeError(w, fmt.Errorf("token must be provided"))
+
+			return
+		}
+
+		token := strings.TrimPrefix(authHeader, TokenPrefix)
+
+		userID, err := security.ValidateToken(token)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			writeError(w, err)
+		}
+
+		r = r.WithContext(context.WithValue(r.Context(), UserIDKey, userID))
+		next.ServeHTTP(w, r)
+	})
 }
