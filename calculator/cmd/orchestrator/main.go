@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/dzherb/go_calculator/internal/storage"
 	"log/slog"
 	"os"
 
 	"github.com/dzherb/go_calculator/internal/orchestrator"
+	"github.com/dzherb/go_calculator/internal/storage"
 	"github.com/dzherb/go_calculator/pkg/logger"
 )
 
@@ -18,6 +18,7 @@ func main() {
 			"Failed to initialize storage",
 			"error", err,
 		)
+
 		return
 	}
 	defer closeSt()
@@ -26,6 +27,6 @@ func main() {
 
 	err = app.Serve()
 	if err != nil {
-		os.Exit(1)
+		defer os.Exit(1)
 	}
 }
