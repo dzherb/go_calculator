@@ -20,7 +20,7 @@ func (a *App) ServeHTTP(ctx context.Context) error {
 
 	srv := http.Server{
 		Addr:         a.config.Host + ":" + a.config.Port,
-		Handler:      commonMiddleware(mux),
+		Handler:      CommonMiddleware(mux),
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
 	}
@@ -53,19 +53,35 @@ func (a *App) ServeHTTP(ctx context.Context) error {
 }
 
 func registerHandlers(mux *http.ServeMux) {
+	mux.Handle("/api/v1/auth/register",
+		EnsureMethodsMiddleware(http.MethodPost)(
+			http.HandlerFunc(RegisterHandler),
+		),
+	)
+	mux.Handle("/api/v1/auth/login",
+		EnsureMethodsMiddleware(http.MethodPost)(
+			http.HandlerFunc(LoginHandler),
+		),
+	)
 	mux.Handle("/api/v1/calculate",
-		ensureMethodsMiddleware(http.MethodPost)(
-			http.HandlerFunc(calculateHandler),
+		AuthRequired(
+			EnsureMethodsMiddleware(http.MethodPost)(
+				http.HandlerFunc(CalculateHandler),
+			),
 		),
 	)
 	mux.Handle("/api/v1/expressions",
-		ensureMethodsMiddleware(http.MethodGet)(
-			http.HandlerFunc(expressionsHandler),
+		AuthRequired(
+			EnsureMethodsMiddleware(http.MethodGet)(
+				http.HandlerFunc(ExpressionsHandler),
+			),
 		),
 	)
 	mux.Handle("/api/v1/expressions/{id}",
-		ensureMethodsMiddleware(http.MethodGet)(
-			http.HandlerFunc(expressionHandler),
+		AuthRequired(
+			EnsureMethodsMiddleware(http.MethodGet)(
+				http.HandlerFunc(ExpressionHandler),
+			),
 		),
 	)
 }

@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+
+	"github.com/dzherb/go_calculator/internal/auth"
 )
 
 type Request struct {
@@ -20,7 +22,7 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-func writeError(w http.ResponseWriter, err error) {
+func WriteError(w http.ResponseWriter, err error) {
 	errRes := ErrorResponse{Error: err.Error()}
 
 	err = json.NewEncoder(w).Encode(errRes)
@@ -32,21 +34,21 @@ func writeError(w http.ResponseWriter, err error) {
 	}
 }
 
-type expressionRequest struct {
+type ExpressionRequest struct {
 	Expression string `json:"expression"`
 }
 
-type expressionSimpleResponse struct {
+type ExpressionSimpleResponse struct {
 	Id uint64 `json:"id"`
 }
 
-func calculateHandler(w http.ResponseWriter, r *http.Request) {
-	exp := expressionRequest{}
+func CalculateHandler(w http.ResponseWriter, r *http.Request) {
+	exp := ExpressionRequest{}
 
 	err := json.NewDecoder(r.Body).Decode(&exp)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		writeError(w, errInvalidRequestBody)
+		WriteError(w, errInvalidRequestBody)
 
 		return
 	}
@@ -54,7 +56,7 @@ func calculateHandler(w http.ResponseWriter, r *http.Request) {
 	expId, err := orchestrator.CreateExpression(exp.Expression)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		writeError(w, err)
+		WriteError(w, err)
 
 		return
 	}
@@ -65,20 +67,20 @@ func calculateHandler(w http.ResponseWriter, r *http.Request) {
 		slog.Uint64("expressionId", expId),
 	)
 
-	err = json.NewEncoder(w).Encode(expressionSimpleResponse{Id: expId})
+	err = json.NewEncoder(w).Encode(ExpressionSimpleResponse{Id: expId})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, err)
+		WriteError(w, err)
 
 		return
 	}
 }
 
-type expressionsResponse struct {
+type ExpressionsResponse struct {
 	Expressions []*ExpressionResponse `json:"expressions"`
 }
 
-func expressionsHandler(w http.ResponseWriter, r *http.Request) {
+func ExpressionsHandler(w http.ResponseWriter, r *http.Request) {
 	expressions, err := orchestrator.GetAllExpressions()
 	if err != nil {
 		slog.Error(
@@ -86,12 +88,12 @@ func expressionsHandler(w http.ResponseWriter, r *http.Request) {
 			slog.String("error", err.Error()),
 		)
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, err)
+		WriteError(w, err)
 
 		return
 	}
 
-	response := expressionsResponse{
+	response := ExpressionsResponse{
 		Expressions: expressions,
 	}
 
@@ -102,17 +104,17 @@ func expressionsHandler(w http.ResponseWriter, r *http.Request) {
 			slog.String("error", err.Error()),
 		)
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, err)
+		WriteError(w, err)
 
 		return
 	}
 }
 
-func expressionHandler(w http.ResponseWriter, r *http.Request) {
+func ExpressionHandler(w http.ResponseWriter, r *http.Request) {
 	expressionId, err := strconv.ParseUint(r.PathValue("id"), 10, 64)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		writeError(w, errInvalidIdInUrl)
+		WriteError(w, errInvalidIdInUrl)
 
 		return
 	}
@@ -126,7 +128,7 @@ func expressionHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 
-		writeError(w, err)
+		WriteError(w, err)
 
 		return
 	}
@@ -134,6 +136,51 @@ func expressionHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(expression)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, err)
+		WriteError(w, err)
+	}
+}
+
+type authRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+var authService = auth.NewService()
+
+func RegisterHandler(w http.ResponseWriter, r *http.Request) {
+	baseAuthHandler(w, r, authService.Register)
+}
+
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	baseAuthHandler(w, r, authService.Login)
+}
+
+func baseAuthHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+	authAction func(username, password string) (auth.AccessPayload, error),
+) {
+	authReq := authRequest{}
+
+	err := json.NewDecoder(r.Body).Decode(&authReq)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, errInvalidRequestBody)
+
+		return
+	}
+
+	resp, err := authAction(authReq.Username, authReq.Password)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, err)
+
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		WriteError(w, err)
 	}
 }
