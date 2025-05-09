@@ -25,3 +25,12 @@ proto:
 .PHONY: migrations
 migrations:
 	@./scripts/migrations.sh
+
+.PHONY: migrate
+migrate:
+	@[ -n "$$DATABASE_URL" ] || (echo "Error: DATABASE_URL is unset" && exit 1)
+	@migrate -database $DATABASE_URL -path internal/storage/migrations up
+
+.PHONY: schema
+schema:
+	@./scripts/schema.sh
