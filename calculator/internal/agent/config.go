@@ -24,7 +24,7 @@ func ConfigFromEnv() *Config {
 		"8081",
 	)
 
-	workers := common.EnvOrDefault("COMPUTING_POWER", "4")
+	workers := common.EnvOrDefault("AGENT_COMPUTING_POWER", "4")
 	config.TotalWorkers, _ = strconv.Atoi(workers)
 
 	return config

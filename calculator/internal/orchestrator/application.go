@@ -1,14 +1,25 @@
 package orchestrator
 
-import "context"
+import (
+	"context"
+
+	"github.com/dzherb/go_calculator/pkg/security"
+)
 
 type App struct {
 	config *Config
 }
 
 func New() *App {
+	cfg := ConfigFromEnv()
+
+	security.Init(security.Config{
+		SecretKey:      cfg.SecretKey,
+		AccessTokenTTL: cfg.AccessTokenTTL,
+	})
+
 	app := &App{
-		config: ConfigFromEnv(),
+		config: cfg,
 	}
 	orchestrator.app = app
 

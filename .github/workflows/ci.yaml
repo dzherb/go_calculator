@@ -23,6 +23,11 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+        ports:
+          - 2375:2375
     defaults:
       run:
         working-directory: ./calculator

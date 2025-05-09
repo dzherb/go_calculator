@@ -74,7 +74,6 @@ func (a *Agent) runWorker() {
 				slog.Error(
 					"unexpected error while getting a task",
 					"error", err,
-					"taskId", task.Id,
 					"workerId", worker.id,
 				)
 			}
