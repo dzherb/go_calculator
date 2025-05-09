@@ -2,7 +2,9 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"log/slog"
+	"os"
 	"strconv"
 	"time"
 
@@ -39,6 +41,17 @@ func closePool() {
 }
 
 const DefaultStatementTimeout = 10 * time.Second
+
+func InitFromEnv() (func(), error) {
+	url, ok := os.LookupEnv("DATABASE_URL")
+	if !ok {
+		return nil, errors.New("DATABASE_URL environment variable not set")
+	}
+
+	return Init(Config{
+		DatabaseUrl: url,
+	})
+}
 
 func Init(cfg Config) (func(), error) {
 	var err error

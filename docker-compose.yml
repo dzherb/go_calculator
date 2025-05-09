@@ -1,6 +1,28 @@
+volumes:
+  pg_data:
+
 services:
+  db:
+    image: postgres:latest
+    shm_size: 128mb
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: password
+
+  migrator:
+    image: migrate/migrate
+    depends_on:
+      - db
+    volumes:
+      - ./calculator/internal/storage/migrations:/migrations
+    entrypoint: [ "migrate", "-path", "/migrations", "-database", "postgres://postgres:password@db:5432/postgres?sslmode=disable", "up" ]
+
   orchestrator:
     container_name: orchestrator
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
     build:
       context: .
       dockerfile: ./docker/orchestrator/Dockerfile
@@ -15,9 +37,12 @@ services:
       TIME_MULTIPLICATIONS_MS: 100
       TIME_DIVISIONS_MS: 100
       TASK_MAX_PROCESS_TIME_IN_MS: 30000
+      DATABASE_URL: "postgres://postgres:password@db:5432/postgres?sslmode=disable"
 
   agent:
     container_name: agent
+    depends_on:
+      - orchestrator
     build:
       context: .
       dockerfile: ./docker/agent/Dockerfile
@@ -25,7 +50,7 @@ services:
       ORCHESTRATOR_HOST: orchestrator
       ORCHESTRATOR_HTTP_PORT: 8080
       ORCHESTRATOR_GRPC_PORT: 8081
-      COMPUTING_POWER: 4
+      AGENT_COMPUTING_POWER: 4
 
   client:
     container_name: client
