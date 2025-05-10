@@ -18,6 +18,11 @@ func TestCalculator(t *testing.T) {
 			expectedResult: 2,
 		},
 		{
+			name:           "one number",
+			expression:     "1",
+			expectedResult: 1,
+		},
+		{
 			name:           "priority",
 			expression:     "2+2*2",
 			expectedResult: 6,
@@ -95,6 +100,10 @@ func TestCalculator(t *testing.T) {
 		{
 			name:       "empty expression",
 			expression: "",
+		},
+		{
+			name:       "whitespace only expression",
+			expression: "      ",
 		},
 		{
 			name:       "no operators",

@@ -68,7 +68,7 @@ func (gs *grpcServer) AddResult(
 	task *pb.TaskResult,
 ) (*pb.AddResultResponse, error) {
 	if task.Error != "" {
-		slog.Error(
+		slog.Warn(
 			"Agent returned calculation error",
 			slog.String("error", task.Error),
 		)

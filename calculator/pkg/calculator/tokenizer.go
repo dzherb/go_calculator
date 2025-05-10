@@ -3,6 +3,7 @@ package calc
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"unicode"
 )
 
@@ -52,6 +53,8 @@ type Token struct {
 }
 
 func tokenize(expression string) ([]Token, error) { //nolint:gocognit,funlen
+	expression = strings.TrimSpace(expression)
+
 	if len(expression) == 0 {
 		return nil, errors.New("expression is empty")
 	}

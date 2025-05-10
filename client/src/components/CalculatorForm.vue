@@ -51,7 +51,7 @@ const MAX_LENGTH = 256
 
 const expression = ref('')
 const isSendButtonDisabled = computed(
-  () => !expression.value || expression.value.length > MAX_LENGTH
+  () => !expression.value || !expression.value.trim() || expression.value.length > MAX_LENGTH
 )
 
 const {result, status, error, isLoading, send} = useExpressionServerEvaluation(expression)

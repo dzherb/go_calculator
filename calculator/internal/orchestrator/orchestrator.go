@@ -40,12 +40,32 @@ func (o *Orchestrator) CreateExpression(
 		return 0, err
 	}
 
-	exprFromDB, err := ExpressionRepo().Create(repo.Expression{
+	er := ExpressionRepo()
+
+	exprFromDB, err := er.Create(repo.Expression{
 		UserID:     userID,
 		Expression: expression,
 	})
 	if err != nil {
 		return 0, err
+	}
+
+	// Handle the case when an expression is trivial,
+	// e.g. one number and no operators.
+	if expr.IsEvaluated() {
+		go func() {
+			exprFromDB.Status = repo.ExpressionSucceed
+
+			_, err := er.Update(exprFromDB)
+			if err != nil {
+				slog.Error("failed to update expression",
+					"expression", expression,
+					"error", err,
+				)
+			}
+		}()
+
+		return exprFromDB.ID, nil
 	}
 
 	expr.Id = exprFromDB.ID
