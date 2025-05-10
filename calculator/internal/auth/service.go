@@ -3,7 +3,7 @@ package auth
 import (
 	"fmt"
 
-	repo "github.com/dzherb/go_calculator/internal/repository"
+	"github.com/dzherb/go_calculator/internal/repository"
 	"github.com/dzherb/go_calculator/pkg/security"
 )
 

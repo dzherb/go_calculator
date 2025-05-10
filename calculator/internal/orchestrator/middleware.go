@@ -39,6 +39,19 @@ func CommonMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func RecoverMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				slog.Error("recovered from panic", "error", err)
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func EnsureMethodsMiddleware(
 	methods ...string,
 ) func(http.Handler) http.Handler {

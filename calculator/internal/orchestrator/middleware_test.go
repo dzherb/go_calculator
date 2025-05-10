@@ -13,8 +13,8 @@ import (
 
 var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	userID := r.Context().Value(orchestrator.UserIDKey).(int)
-	w.Write([]byte(strconv.Itoa(userID))) //nolint:errcheck
+	userID := r.Context().Value(orchestrator.UserIDKey).(uint64)
+	w.Write([]byte(strconv.FormatUint(userID, 10))) //nolint:errcheck
 })
 
 func initSecurity() {
@@ -27,7 +27,7 @@ func initSecurity() {
 func TestAuthMiddlewareSuccess(t *testing.T) {
 	initSecurity()
 
-	userID := 25
+	userID := uint64(25)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 
@@ -46,8 +46,12 @@ func TestAuthMiddlewareSuccess(t *testing.T) {
 		t.Errorf("got status %v, want %v", status, http.StatusOK)
 	}
 
-	if rr.Body.String() != strconv.Itoa(userID) {
-		t.Errorf("got body %v, want %v", rr.Body.String(), strconv.Itoa(userID))
+	if rr.Body.String() != strconv.FormatUint(userID, 10) {
+		t.Errorf(
+			"got body %v, want %v",
+			rr.Body.String(),
+			strconv.FormatUint(userID, 10),
+		)
 	}
 }
 

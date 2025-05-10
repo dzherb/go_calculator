@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	repo "github.com/dzherb/go_calculator/internal/repository"
+	"github.com/dzherb/go_calculator/internal/repository"
 	"github.com/dzherb/go_calculator/internal/storage"
 	"github.com/jackc/pgx/v5"
 )

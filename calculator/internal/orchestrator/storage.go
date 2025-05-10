@@ -1,6 +1,7 @@
 package orchestrator
 
 import (
+	"iter"
 	"sync"
 
 	"github.com/dzherb/go_calculator/pkg/calculator"
@@ -9,22 +10,22 @@ import (
 type Storage[T any] interface {
 	Put(value T)
 	Get(id uint64) (T, bool)
-	GetAll() []T
+	GetAll() iter.Seq[T]
 }
 
-type expressionStorage struct {
+type exprStorage struct {
 	expressions map[uint64]*calc.Expression
 	mu          sync.RWMutex
 }
 
-func (s *expressionStorage) Put(expression *calc.Expression) {
+func (s *exprStorage) Put(expression *calc.Expression) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.expressions[expression.Id] = expression
 }
 
-func (s *expressionStorage) Get(id uint64) (*calc.Expression, bool) {
+func (s *exprStorage) Get(id uint64) (*calc.Expression, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -33,20 +34,20 @@ func (s *expressionStorage) Get(id uint64) (*calc.Expression, bool) {
 	return exp, ok
 }
 
-func (s *expressionStorage) GetAll() []*calc.Expression {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+func (s *exprStorage) GetAll() iter.Seq[*calc.Expression] {
+	return func(yield func(*calc.Expression) bool) {
+		s.mu.RLock()
+		defer s.mu.RUnlock()
 
-	expressions := make([]*calc.Expression, 0, len(s.expressions))
-
-	for _, exp := range s.expressions {
-		expressions = append(expressions, exp)
+		for _, exp := range s.expressions {
+			if !yield(exp) {
+				return
+			}
+		}
 	}
-
-	return expressions
 }
 
-var ExpressionStorageInstance = &expressionStorage{
+var ExpressionStorageInstance = &exprStorage{
 	expressions: make(map[uint64]*calc.Expression),
 }
 
@@ -71,17 +72,17 @@ func (s *taskStorage) Get(id uint64) (*calc.Task, bool) {
 	return task, ok
 }
 
-func (s *taskStorage) GetAll() []*calc.Task {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+func (s *taskStorage) GetAll() iter.Seq[*calc.Task] {
+	return func(yield func(*calc.Task) bool) {
+		s.mu.RLock()
+		defer s.mu.RUnlock()
 
-	tasks := make([]*calc.Task, 0, len(s.tasks))
-
-	for _, task := range s.tasks {
-		tasks = append(tasks, task)
+		for _, exp := range s.tasks {
+			if !yield(exp) {
+				return
+			}
+		}
 	}
-
-	return tasks
 }
 
 var TaskStorageInstance = &taskStorage{

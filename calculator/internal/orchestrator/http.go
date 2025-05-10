@@ -20,7 +20,7 @@ func (a *App) ServeHTTP(ctx context.Context) error {
 
 	srv := http.Server{
 		Addr:         a.config.Host + ":" + a.config.Port,
-		Handler:      CommonMiddleware(mux),
+		Handler:      RecoverMiddleware(CommonMiddleware(mux)),
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
 	}

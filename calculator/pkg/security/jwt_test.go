@@ -108,7 +108,7 @@ func TestTokenValidation(t *testing.T) {
 			continue
 		}
 
-		expectedID, err := strconv.Atoi(c.token.sub)
+		expectedID, err := strconv.ParseUint(c.token.sub, 10, 64)
 		if err != nil {
 			t.Error(err)
 			continue

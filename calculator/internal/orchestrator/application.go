@@ -32,6 +32,8 @@ func (a *App) Serve() error {
 
 	defer cancel()
 
+	go NewExpressionsDaemon().Start(ctx)
+
 	go func() {
 		errChan <- a.ServeGRPC(ctx)
 	}()

@@ -16,18 +16,18 @@ func Init(cfg Config) {
 	accessTokenTTL = cfg.AccessTokenTTL
 }
 
-func IssueAccessToken(userID int) (string, error) {
+func IssueAccessToken(userID uint64) (string, error) {
 	now := time.Now().UTC()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"iat": timeToFloat64(now),
-		"sub": strconv.Itoa(userID),
+		"sub": strconv.FormatUint(userID, 10),
 		"exp": timeToFloat64(now.Add(accessTokenTTL)),
 	})
 
 	return token.SignedString(secretKey)
 }
 
-func ValidateToken(tokenString string) (int, error) {
+func ValidateToken(tokenString string) (uint64, error) {
 	token, err := jwt.Parse(
 		tokenString,
 		func(token *jwt.Token) (interface{}, error) {
@@ -46,7 +46,7 @@ func ValidateToken(tokenString string) (int, error) {
 		return 0, err
 	}
 
-	userID, err := strconv.Atoi(sub)
+	userID, err := strconv.ParseUint(sub, 10, 64)
 	if err != nil {
 		return 0, err
 	}
