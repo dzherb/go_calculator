@@ -8,35 +8,43 @@ import (
 	"github.com/dzherb/go_calculator/internal/repository"
 )
 
-type ExpressionsDaemon struct {
+type Daemon struct {
 }
 
-func NewExpressionsDaemon() *ExpressionsDaemon {
-	return &ExpressionsDaemon{}
+func NewDaemon() *Daemon {
+	return &Daemon{}
 }
 
-const ExpressionAbortPeriod = time.Minute * 5
+const ExprAbortPeriod = time.Minute * 5
+const ExprCleanPeriod = time.Minute * 2
+const TasksCleanPeriod = time.Minute * 1
 
-func (ed *ExpressionsDaemon) Start(ctx context.Context) {
-	slog.Info("starting expressions daemon")
+func (d *Daemon) Start(ctx context.Context) {
+	slog.Info("starting orchestrator daemon")
 
-	ticker := time.NewTicker(ExpressionAbortPeriod)
+	ExprAbortTicker := time.Tick(ExprAbortPeriod)
+	ExprCleanTicker := time.Tick(ExprCleanPeriod)
+	TasksCleanTicker := time.Tick(TasksCleanPeriod)
 
 	for {
 		select {
 		case <-ctx.Done():
-			slog.Info("stopping expressions daemon")
+			slog.Info("stopping orchestrator daemon")
 			return
-		case <-ticker.C:
-			go ed.AbortUnprocessedExpressions()
+		case <-ExprAbortTicker:
+			go d.AbortUnprocessedExpr()
+		case <-ExprCleanTicker:
+			go d.CleanExprStorage()
+		case <-TasksCleanTicker:
+			go d.CleanTasksStorage()
 		}
 	}
 }
 
-func (ed *ExpressionsDaemon) AbortUnprocessedExpressions() {
+func (d *Daemon) AbortUnprocessedExpr() {
 	expressions, err := ExpressionRepo().Unprocessed()
 	if err != nil {
-		slog.Error("Failed to retrieve old expressions", "error", err)
+		slog.Error("Failed to retrieve unprocessed expressions", "error", err)
 		return
 	}
 
@@ -53,5 +61,35 @@ func (ed *ExpressionsDaemon) AbortUnprocessedExpressions() {
 
 			return
 		}
+
+		orchestrator.exprMemStorage.Delete(expr.ID)
+	}
+}
+
+func (d *Daemon) CleanExprStorage() {
+	var exprs []uint64
+
+	for e := range orchestrator.exprMemStorage.All() {
+		if e.IsFailed || e.IsEvaluated() {
+			exprs = append(exprs, e.Id)
+		}
+	}
+
+	for _, id := range exprs {
+		orchestrator.exprMemStorage.Delete(id)
+	}
+}
+
+func (d *Daemon) CleanTasksStorage() {
+	var tasks []uint64
+
+	for t := range orchestrator.taskMemStorage.All() {
+		if t.IsCanceled || t.IsCompleted {
+			tasks = append(tasks, t.Id)
+		}
+	}
+
+	for _, id := range tasks {
+		orchestrator.taskMemStorage.Delete(id)
 	}
 }

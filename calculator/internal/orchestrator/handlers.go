@@ -142,6 +142,7 @@ func ExpressionHandler(w http.ResponseWriter, r *http.Request) {
 	if expr.UserID != userID {
 		w.WriteHeader(http.StatusNotFound)
 		WriteError(w, errExpressionNotFound)
+
 		return
 	}
 

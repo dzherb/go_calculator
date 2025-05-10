@@ -66,7 +66,7 @@ func (o *Orchestrator) GetUserExpressions(
 }
 
 func (o *Orchestrator) StartProcessingNextTask() (*pb.TaskToProcess, error) {
-	for expr := range o.exprMemStorage.GetAll() {
+	for expr := range o.exprMemStorage.All() {
 		task, ok := expr.GetNextTask()
 		if !ok {
 			continue
@@ -133,15 +133,6 @@ func (o *Orchestrator) CompleteTask(taskId uint64, result float64) error {
 	})
 
 	return err
-}
-
-func (o *Orchestrator) CancelTask(id uint64) error {
-	task, ok := o.taskMemStorage.Get(id)
-	if !ok {
-		return errTaskNotFound
-	}
-
-	return task.Cancel()
 }
 
 func (o *Orchestrator) OnCalculationFailure(taskId uint64) error {

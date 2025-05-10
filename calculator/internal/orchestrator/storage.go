@@ -10,7 +10,8 @@ import (
 type Storage[T any] interface {
 	Put(value T)
 	Get(id uint64) (T, bool)
-	GetAll() iter.Seq[T]
+	Delete(id uint64)
+	All() iter.Seq[T]
 }
 
 type exprStorage struct {
@@ -34,7 +35,7 @@ func (s *exprStorage) Get(id uint64) (*calc.Expression, bool) {
 	return exp, ok
 }
 
-func (s *exprStorage) GetAll() iter.Seq[*calc.Expression] {
+func (s *exprStorage) All() iter.Seq[*calc.Expression] {
 	return func(yield func(*calc.Expression) bool) {
 		s.mu.RLock()
 		defer s.mu.RUnlock()
@@ -45,6 +46,13 @@ func (s *exprStorage) GetAll() iter.Seq[*calc.Expression] {
 			}
 		}
 	}
+}
+
+func (s *exprStorage) Delete(id uint64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	delete(s.expressions, id)
 }
 
 var ExpressionStorageInstance = &exprStorage{
@@ -72,7 +80,7 @@ func (s *taskStorage) Get(id uint64) (*calc.Task, bool) {
 	return task, ok
 }
 
-func (s *taskStorage) GetAll() iter.Seq[*calc.Task] {
+func (s *taskStorage) All() iter.Seq[*calc.Task] {
 	return func(yield func(*calc.Task) bool) {
 		s.mu.RLock()
 		defer s.mu.RUnlock()
@@ -83,6 +91,13 @@ func (s *taskStorage) GetAll() iter.Seq[*calc.Task] {
 			}
 		}
 	}
+}
+
+func (s *taskStorage) Delete(id uint64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	delete(s.tasks, id)
 }
 
 var TaskStorageInstance = &taskStorage{
