@@ -3,8 +3,8 @@ package auth
 import (
 	"fmt"
 
-	"github.com/dzherb/go_calculator/internal/repository"
-	"github.com/dzherb/go_calculator/pkg/security"
+	"github.com/dzherb/go_calculator/calculator/internal/repository"
+	"github.com/dzherb/go_calculator/calculator/pkg/security"
 )
 
 type Service interface {

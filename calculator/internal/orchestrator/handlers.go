@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/dzherb/go_calculator/internal/auth"
-	"github.com/dzherb/go_calculator/internal/repository"
+	"github.com/dzherb/go_calculator/calculator/internal/auth"
+	"github.com/dzherb/go_calculator/calculator/internal/repository"
 )
 
 type Request struct {

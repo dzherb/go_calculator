@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/dzherb/go_calculator/pkg/security"
+	"github.com/dzherb/go_calculator/calculator/pkg/security"
 )
 
 func CommonMiddleware(next http.Handler) http.Handler {

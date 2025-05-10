@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/dzherb/go_calculator/internal/repository"
+	"github.com/dzherb/go_calculator/calculator/internal/repository"
 )
 
 type Daemon struct {

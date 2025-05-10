@@ -3,7 +3,7 @@ package calc_test
 import (
 	"testing"
 
-	"github.com/dzherb/go_calculator/pkg/calculator"
+	"github.com/dzherb/go_calculator/calculator/pkg/calculator"
 )
 
 func TestCalculator(t *testing.T) {

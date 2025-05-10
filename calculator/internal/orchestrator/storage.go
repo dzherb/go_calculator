@@ -4,7 +4,7 @@ import (
 	"iter"
 	"sync"
 
-	"github.com/dzherb/go_calculator/pkg/calculator"
+	"github.com/dzherb/go_calculator/calculator/pkg/calculator"
 )
 
 type Storage[T any] interface {

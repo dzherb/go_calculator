@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"time"
 
-	pb "github.com/dzherb/go_calculator/internal/gen"
-	"github.com/dzherb/go_calculator/internal/repository"
-	"github.com/dzherb/go_calculator/pkg/calculator"
+	pb "github.com/dzherb/go_calculator/calculator/internal/gen"
+	"github.com/dzherb/go_calculator/calculator/internal/repository"
+	"github.com/dzherb/go_calculator/calculator/pkg/calculator"
 )
 
 type Orchestrator struct {

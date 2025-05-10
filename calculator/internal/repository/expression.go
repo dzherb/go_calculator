@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/dzherb/go_calculator/internal/storage"
+	"github.com/dzherb/go_calculator/calculator/internal/storage"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
 )

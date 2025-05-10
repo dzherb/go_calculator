@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dzherb/go_calculator/internal/orchestrator"
-	"github.com/dzherb/go_calculator/pkg/security"
+	"github.com/dzherb/go_calculator/calculator/internal/orchestrator"
+	"github.com/dzherb/go_calculator/calculator/pkg/security"
 )
 
 var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -1,6 +1,6 @@
 package agent
 
-import pb "github.com/dzherb/go_calculator/internal/gen"
+import pb "github.com/dzherb/go_calculator/calculator/internal/gen"
 
 type Agent struct {
 	config *Config

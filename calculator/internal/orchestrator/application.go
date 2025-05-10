@@ -3,7 +3,7 @@ package orchestrator
 import (
 	"context"
 
-	"github.com/dzherb/go_calculator/pkg/security"
+	"github.com/dzherb/go_calculator/calculator/pkg/security"
 )
 
 type App struct {

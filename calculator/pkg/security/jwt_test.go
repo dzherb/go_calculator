@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dzherb/go_calculator/pkg/security"
+	"github.com/dzherb/go_calculator/calculator/pkg/security"
 	"github.com/golang-jwt/jwt/v5"
 )
 

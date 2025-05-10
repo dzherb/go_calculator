@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/dzherb/go_calculator/internal/storage"
+	"github.com/dzherb/go_calculator/calculator/internal/storage"
 	"github.com/golang-migrate/migrate/v4"
 )
 

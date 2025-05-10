@@ -4,9 +4,9 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/dzherb/go_calculator/internal/orchestrator"
-	"github.com/dzherb/go_calculator/internal/storage"
-	"github.com/dzherb/go_calculator/pkg/logger"
+	"github.com/dzherb/go_calculator/calculator/internal/orchestrator"
+	"github.com/dzherb/go_calculator/calculator/internal/storage"
+	"github.com/dzherb/go_calculator/calculator/pkg/logger"
 )
 
 func main() {

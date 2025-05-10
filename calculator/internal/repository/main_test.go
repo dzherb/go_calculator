@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dzherb/go_calculator/internal/storage"
+	"github.com/dzherb/go_calculator/calculator/internal/storage"
 )
 
 func TestMain(m *testing.M) {

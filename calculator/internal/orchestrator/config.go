@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dzherb/go_calculator/internal/pkg"
+	"github.com/dzherb/go_calculator/calculator/internal/pkg"
 )
 
 type Config struct {

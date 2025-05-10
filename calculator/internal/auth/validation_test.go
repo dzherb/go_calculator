@@ -3,7 +3,7 @@ package auth_test
 import (
 	"testing"
 
-	"github.com/dzherb/go_calculator/internal/auth"
+	"github.com/dzherb/go_calculator/calculator/internal/auth"
 )
 
 func TestMinLengthValidator(t *testing.T) {

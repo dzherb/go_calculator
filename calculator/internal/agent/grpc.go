@@ -1,7 +1,7 @@
 package agent
 
 import (
-	pb "github.com/dzherb/go_calculator/internal/gen"
+	pb "github.com/dzherb/go_calculator/calculator/internal/gen"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

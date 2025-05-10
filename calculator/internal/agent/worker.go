@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	pb "github.com/dzherb/go_calculator/internal/gen"
+	pb "github.com/dzherb/go_calculator/calculator/internal/gen"
 )
 
 func (w *agentWorker) client() pb.TaskServiceClient {
