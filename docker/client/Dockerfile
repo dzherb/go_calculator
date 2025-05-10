@@ -14,8 +14,8 @@ ENV VITE_BACKEND_BASE_URL=$BACKEND_BASE_URL
 
 RUN yarn build
 
-FROM nginx:alpine AS prod
+FROM alpine
 
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/dist /tmp_static
 
-EXPOSE 80
+CMD mv /tmp_static/* /static && rm -rf /tmp_static

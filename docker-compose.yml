@@ -1,5 +1,6 @@
 volumes:
   pg_data:
+  static:
 
 services:
   db:
@@ -19,15 +20,12 @@ services:
     entrypoint: [ "migrate", "-path", "/migrations", "-database", "postgres://postgres:password@db:5432/postgres?sslmode=disable", "up" ]
 
   orchestrator:
-    container_name: orchestrator
     depends_on:
       migrator:
         condition: service_completed_successfully
     build:
       context: .
       dockerfile: ./docker/orchestrator/Dockerfile
-    ports:
-      - "8080:8080"
     environment:
       ORCHESTRATOR_HOST: 0.0.0.0
       ORCHESTRATOR_HTTP_PORT: 8080
@@ -40,7 +38,6 @@ services:
       DATABASE_URL: "postgres://postgres:password@db:5432/postgres?sslmode=disable"
 
   agent:
-    container_name: agent
     depends_on:
       - orchestrator
     build:
@@ -53,11 +50,17 @@ services:
       AGENT_COMPUTING_POWER: 4
 
   client:
-    container_name: client
     build:
       context: .
       dockerfile: ./docker/client/Dockerfile
-      args:
-        BACKEND_BASE_URL: http://localhost:8080
+    volumes:
+      - static:/static
+
+  nginx:
+    depends_on:
+      - orchestrator
+    build: ./docker/nginx
     ports:
       - "8081:80"
+    volumes:
+      - static:/static
