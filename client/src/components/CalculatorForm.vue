@@ -3,7 +3,7 @@
     <v-sheet
       width="300"
       height="500"
-      class="align-centerfill-height mx-auto px-6 py-8"
+      class="fill-height d-flex justify-center flex-column mx-auto px-6 py-8"
     >
       <v-form
         @submit.prevent
@@ -38,9 +38,14 @@
           <v-chip v-if="status" density="compact" :color="statusColor">{{ status }}</v-chip>
           <span v-else>-</span>
         </p>
-        <p class="d-flex justify-space-between mt-2">Error: <span v-if="!error">-</span></p>
-        <p class="text-red-darken-1 mt-2">{{ error }}</p>
+        <div class="error-container">
+          <p class="mt-2" :class="error ? '' : 'd-flex justify-space-between'">
+            Error: <span v-if="!error">-</span>
+            <span v-if="error" class="text-red-darken-4 ml-1">{{ error }}</span>
+          </p>
+        </div>
       </v-form>
+      <div class="h-25"></div>
     </v-sheet>
   </v-container>
 </template>
@@ -64,7 +69,7 @@ const statusColor = computed(() => {
     case EXPRESSION_STATUS.SUCCEED:
       return 'green'
     case EXPRESSION_STATUS.FAILED || EXPRESSION_STATUS.ABORTED:
-      return 'red'
+      return 'red-darken-4'
   }
 })
 </script>
