@@ -9,7 +9,7 @@ export const EXPRESSION_STATUS = {
   NEW: 'new',
   PROCESSING: 'processing',
   SUCCEED: 'succeed',
-  ABORTED: 'processed',
+  ABORTED: 'aborted',
   FAILED: 'failed'
 }
 
@@ -64,6 +64,16 @@ export const api = {
     }
 
     const response = await apiFetch(`${BASE_URL}/api/v1/expressions/${expressionId}`)
+
+    return {...schema, ...response}
+  },
+
+  async expressionsHistory() {
+    const schema = {
+      expressions: []
+    }
+
+    const response = await apiFetch(`${BASE_URL}/api/v1/expressions`)
 
     return {...schema, ...response}
   },

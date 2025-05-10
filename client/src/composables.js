@@ -1,7 +1,8 @@
 import {timeout} from "@/utils.js";
 import {api, EXPRESSION_STATUS} from "@/api.js";
 import {computed, ref, toValue, watchEffect} from "vue";
-import {useLocalStorage} from "@vueuse/core";
+import {useDark, useLocalStorage} from "@vueuse/core";
+import {useTheme} from "vuetify";
 
 
 const EXPRESSION_FAILED_RESPONSE = 'calculation failed, make sure there is no division by zero'
@@ -14,10 +15,23 @@ export const useExpressionServerEvaluation = (expression) => {
   const error = ref(null)
   const isLoading = ref(false)
 
+  const {addExpression} = useExpressionsHistory()
+
   const send = () => {
     isLoading.value = true
-    _sendExpressionAndCheckResult(toValue(expression), result, status, error)
+    return _sendExpressionAndCheckResult(toValue(expression), result, status, error)
       .then(() => isLoading.value = false)
+      .then(() => {
+        if (status.value !== null) {
+          // we can populate history now,
+          // there is no need to fetch it right after
+          addExpression({
+            result: result.value,
+            expression: expression.value,
+            status: status.value
+          })
+        }
+      })
   }
 
   const reset = () => {
@@ -59,6 +73,38 @@ const _sendExpressionAndCheckResult = async (expression, resultRef, statusRef, e
     }
     resultRef.value = result
     return
+  }
+}
+
+const expressions = ref([])
+
+export const useExpressionsHistory = () => {
+  const isLoading = ref(false)
+  const error = ref(null)
+
+  const fetchExpressions = async () => {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const result = await api.expressionsHistory()
+      error.value = result?.value
+      expressions.value = result?.expressions ?? []
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const addExpression = (expression) => {
+    expressions.value.unshift(expression)
+  }
+
+  return {
+    expressions,
+    isLoading,
+    error,
+    fetchExpressions,
+    addExpression
   }
 }
 
@@ -128,5 +174,28 @@ export const useAuthentication = () => {
     registerError,
     logout,
     fetchCurrentUser
+  }
+}
+
+export const useAppTheme = () => {
+  const isDark = useDark()
+  const theme = useTheme()
+
+  theme.global.name.value = isDark.value ? 'dark' : 'light'
+
+  const toggleTheme = () => {
+    if (isDark.value) {
+      theme.global.name.value = 'light'
+      isDark.value = false
+      return
+    }
+
+    theme.global.name.value = 'dark'
+    isDark.value = true
+  }
+
+  return {
+    isDark,
+    toggleTheme
   }
 }

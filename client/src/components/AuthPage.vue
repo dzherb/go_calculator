@@ -1,10 +1,9 @@
 <template>
-  <v-container class="fill-height">
-    <v-sheet
-      width="350"
-      height="500"
-      class="fill-height d-flex justify-center flex-column fill-height mx-auto px-6 py-8"
-    >
+  <v-sheet
+    height="500"
+    class="d-flex justify-center flex-column fill-height px-6 py-8"
+  >
+    <v-container max-width="350">
       <v-form
         v-model="isFormValid"
         @submit.prevent
@@ -54,15 +53,14 @@
         </div>
         <p class="text-red-darken-4 mt-2 error-container">{{ loginError || registerError }}</p>
       </v-form>
-      <div class="h-25"></div>
-    </v-sheet>
-  </v-container>
+    </v-container>
+    <div class="h-25"></div>
+  </v-sheet>
 </template>
 
 <script setup>
 import {ref, toValue, watchEffect} from "vue";
 import {useAuthentication} from "@/composables.js";
-import {timeout} from "@/utils.js";
 
 const isFormValid = ref(false)
 
@@ -85,7 +83,6 @@ const minLength = (length) => {
 
 const action = async () => {
   isLoading.value = true
-  await timeout(3000)
   try {
     if (tab.value === 'Login') {
       await login({username, password})

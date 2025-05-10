@@ -126,7 +126,8 @@ func (er *ExpressionRepositoryImpl) GetForUser(
 		&exprs,
 		`SELECT id, user_id, status, expression, result, created_at, updated_at
 		FROM expressions
-		WHERE user_id = $1;`,
+		WHERE user_id = $1
+		ORDER BY created_at DESC;`,
 		userID,
 	)
 
