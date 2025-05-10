@@ -54,6 +54,8 @@ func ConfigFromEnv() *Config {
 
 	if accessTokenTTL, exists := os.LookupEnv("ACCESS_TOKEN_TTL"); exists {
 		config.AccessTokenTTL = getDurationInMin(accessTokenTTL)
+	} else {
+		config.AccessTokenTTL = 1 * time.Hour
 	}
 
 	return config

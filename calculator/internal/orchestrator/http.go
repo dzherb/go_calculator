@@ -63,6 +63,13 @@ func registerHandlers(mux *http.ServeMux) {
 			http.HandlerFunc(LoginHandler),
 		),
 	)
+	mux.Handle("/api/v1/users/me",
+		AuthRequired(
+			EnsureMethodsMiddleware(http.MethodGet)(
+				http.HandlerFunc(currentUserHandler),
+			),
+		),
+	)
 	mux.Handle("/api/v1/calculate",
 		AuthRequired(
 			EnsureMethodsMiddleware(http.MethodPost)(

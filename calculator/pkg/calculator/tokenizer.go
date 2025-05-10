@@ -72,9 +72,8 @@ func tokenize(expression string) ([]Token, error) { //nolint:gocognit,funlen
 		currSymbolType, ok := validSymbols[currentSymbol]
 		if !ok {
 			return nil, fmt.Errorf(
-				"expression contains invalid Token at position %d: %s",
-				i,
-				string(char),
+				"expression contains invalid token at position %d: %s",
+				i, string(char),
 			)
 		}
 

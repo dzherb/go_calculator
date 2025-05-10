@@ -3,6 +3,7 @@ package orchestrator
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -192,6 +193,22 @@ func baseAuthHandler(
 	}
 
 	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		WriteError(w, err)
+	}
+}
+
+func currentUserHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(UserIDKey).(uint64)
+
+	user, err := repo.NewUserRepository().Get(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		WriteError(w, fmt.Errorf("failed to get user"))
+	}
+
+	err = json.NewEncoder(w).Encode(user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		WriteError(w, err)
