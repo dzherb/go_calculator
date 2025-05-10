@@ -2,9 +2,10 @@ const BASE_URL = 'http://' + import.meta.env.VITE_BACKEND_SERVER_HOST + ':' + im
 const NO_RESPONSE_FROM_SERVER_MESSAGE = 'no response body from the server'
 
 export const EXPRESSION_STATUS = {
-  WAITING_FOR_PROCESSING: 'waiting for processing',
+  NEW: 'new',
   PROCESSING: 'processing',
-  PROCESSED: 'processed',
+  SUCCEED: 'succeed',
+  ABORTED: 'processed',
   FAILED: 'failed'
 }
 

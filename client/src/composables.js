@@ -49,10 +49,10 @@ const _sendExpressionAndCheckResult = async (expression, resultRef, statusRef, e
     }
 
     statusRef.value = status
-    if (status === EXPRESSION_STATUS.FAILED) {
+    if (status === EXPRESSION_STATUS.FAILED || status === EXPRESSION_STATUS.ABORTED) {
       errorRef.value = EXPRESSION_FAILED_RESPONSE
       return
-    } else if (status !== EXPRESSION_STATUS.PROCESSED) {
+    } else if (status !== EXPRESSION_STATUS.SUCCEED) {
       await timeout(EXPRESSION_REQUEST_INTERVAL_IN_MS)
       continue
     }

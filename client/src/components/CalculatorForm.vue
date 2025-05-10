@@ -57,13 +57,13 @@ const {result, status, error, isLoading, send} = useExpressionServerEvaluation(e
 
 const statusColor = computed(() => {
   switch (status.value) {
-    case EXPRESSION_STATUS.WAITING_FOR_PROCESSING:
+    case EXPRESSION_STATUS.NEW:
       return null
     case EXPRESSION_STATUS.PROCESSING:
       return 'primary'
-    case EXPRESSION_STATUS.PROCESSED:
+    case EXPRESSION_STATUS.SUCCEED:
       return 'green'
-    case EXPRESSION_STATUS.FAILED:
+    case EXPRESSION_STATUS.FAILED || EXPRESSION_STATUS.ABORTED:
       return 'red'
   }
 })
