@@ -18,4 +18,6 @@ FROM alpine
 
 COPY --from=builder /app/dist /tmp_static
 
-CMD mv /tmp_static/* /static && rm -rf /tmp_static
+RUN chmod +rwx /tmp_static/*
+
+CMD rm -rf /static/* && mv /tmp_static/* /static

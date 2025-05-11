@@ -10,14 +10,22 @@ services:
       - pg_data:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: password
+      PGUSER: postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   migrator:
-    image: migrate/migrate
     depends_on:
-      - db
-    volumes:
-      - ./calculator/internal/storage/migrations:/migrations
-    entrypoint: [ "migrate", "-path", "/migrations", "-database", "postgres://postgres:password@db:5432/postgres?sslmode=disable", "up" ]
+      db:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: ./docker/migrator/Dockerfile
+    environment:
+      DATABASE_URL: "postgres://postgres:password@db:5432/postgres?sslmode=disable"
 
   orchestrator:
     depends_on:
