@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/dzherb/go_calculator/calculator/internal/repository"
 	"github.com/dzherb/go_calculator/calculator/pkg/security"
@@ -73,6 +74,10 @@ func (s *ServiceImpl) Register(
 	})
 
 	if err != nil {
+		if strings.Contains(err.Error(), "violates unique constraint") {
+			err = fmt.Errorf("username is already taken")
+		}
+
 		return AccessPayload{}, fmt.Errorf(errFmt, err)
 	}
 

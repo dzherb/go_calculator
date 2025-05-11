@@ -199,7 +199,7 @@ func baseAuthHandler(
 	}
 }
 
-func currentUserHandler(w http.ResponseWriter, r *http.Request) {
+func CurrentUserHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(UserIDKey).(uint64)
 
 	user, err := repo.NewUserRepository().Get(userID)
