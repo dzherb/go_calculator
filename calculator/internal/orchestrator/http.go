@@ -66,7 +66,7 @@ func registerHandlers(mux *http.ServeMux) {
 	mux.Handle("/api/v1/users/me",
 		AuthRequired(
 			EnsureMethodsMiddleware(http.MethodGet)(
-				http.HandlerFunc(currentUserHandler),
+				http.HandlerFunc(CurrentUserHandler),
 			),
 		),
 	)
