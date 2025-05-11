@@ -5,64 +5,102 @@ import (
 	"log/slog"
 	"time"
 
-	pb "github.com/dzherb/go_calculator/internal/gen"
-	"github.com/dzherb/go_calculator/pkg/calculator"
+	pb "github.com/dzherb/go_calculator/calculator/internal/gen"
+	"github.com/dzherb/go_calculator/calculator/internal/repository"
+	"github.com/dzherb/go_calculator/calculator/pkg/calculator"
 )
 
 type Orchestrator struct {
-	app               *App
-	expressionStorage Storage[*calc.Expression]
-	taskStorage       Storage[*calc.Task]
+	app            *App
+	exprMemStorage Storage[*calc.Expression]
+	taskMemStorage Storage[*calc.Task]
 }
 
 var orchestrator = Orchestrator{
-	expressionStorage: ExpressionStorageInstance,
-	taskStorage:       TaskStorageInstance,
+	exprMemStorage: ExpressionStorageInstance,
+	taskMemStorage: TaskStorageInstance,
 }
 
-func (o *Orchestrator) CreateExpression(expression string) (uint64, error) {
-	exp, err := calc.NewExpression(expression)
+var expressionRepo repo.ExpressionRepository
+
+func ExpressionRepo() repo.ExpressionRepository {
+	if expressionRepo == nil {
+		expressionRepo = repo.NewExpressionRepository()
+	}
+
+	return expressionRepo
+}
+
+func (o *Orchestrator) CreateExpression(
+	expression string,
+	userID uint64,
+) (uint64, error) {
+	expr, err := calc.NewExpression(expression)
 	if err != nil {
 		return 0, err
 	}
 
-	o.expressionStorage.Put(exp)
+	er := ExpressionRepo()
 
-	return exp.Id, nil
-}
-
-func (o *Orchestrator) GetExpression(id uint64) (*ExpressionResponse, error) {
-	exp, ok := o.expressionStorage.Get(id)
-	if !ok {
-		return nil, errExpressionNotFound
+	exprFromDB, err := er.Create(repo.Expression{
+		UserID:     userID,
+		Expression: expression,
+	})
+	if err != nil {
+		return 0, err
 	}
 
-	return newExpressionResponse(exp)
-}
+	// Handle the case when an expression is trivial,
+	// e.g. one number and no operators.
+	if expr.IsEvaluated() {
+		go func() {
+			exprFromDB.Status = repo.ExpressionSucceed
 
-func (o *Orchestrator) GetAllExpressions() ([]*ExpressionResponse, error) {
-	results := make([]*ExpressionResponse, 0)
+			_, err := er.Update(exprFromDB)
+			if err != nil {
+				slog.Error("failed to update expression",
+					"expression", expression,
+					"error", err,
+				)
+			}
+		}()
 
-	for _, exp := range o.expressionStorage.GetAll() {
-		resExp, err := newExpressionResponse(exp)
-		if err != nil {
-			return nil, err
-		}
-
-		results = append(results, resExp)
+		return exprFromDB.ID, nil
 	}
 
-	return results, nil
+	expr.Id = exprFromDB.ID
+
+	o.exprMemStorage.Put(expr)
+
+	return expr.Id, nil
+}
+
+func (o *Orchestrator) GetExpression(id uint64) (repo.Expression, error) {
+	return ExpressionRepo().Get(id)
+}
+
+func (o *Orchestrator) GetUserExpressions(
+	userID uint64,
+) ([]repo.Expression, error) {
+	return ExpressionRepo().GetForUser(userID)
 }
 
 func (o *Orchestrator) StartProcessingNextTask() (*pb.TaskToProcess, error) {
-	for _, exp := range o.expressionStorage.GetAll() {
-		task, ok := exp.GetNextTask()
+	for expr := range o.exprMemStorage.All() {
+		task, ok := expr.GetNextTask()
 		if !ok {
 			continue
 		}
 
-		o.taskStorage.Put(task)
+		_, err := ExpressionRepo().Update(repo.Expression{
+			ID:     expr.Id,
+			Status: repo.ExpressionProcessing,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		o.taskMemStorage.Put(task)
 
 		go func() {
 			time.Sleep(o.app.config.TaskMaxProcessTime)
@@ -87,90 +125,64 @@ func (o *Orchestrator) StartProcessingNextTask() (*pb.TaskToProcess, error) {
 }
 
 func (o *Orchestrator) CompleteTask(taskId uint64, result float64) error {
-	task, ok := o.taskStorage.Get(taskId)
+	task, ok := o.taskMemStorage.Get(taskId)
 	if !ok {
 		return errTaskNotFound
 	}
 
 	err := task.Complete(result)
+	if err != nil {
+		return err
+	}
+
+	expr := task.GetExpression()
+
+	if !expr.IsEvaluated() {
+		return nil
+	}
+
+	res, err := expr.GetResult()
+	if err != nil {
+		return err
+	}
+
+	_, err = ExpressionRepo().Update(repo.Expression{
+		ID:     task.GetExpression().Id,
+		Status: repo.ExpressionSucceed,
+		Result: &res,
+	})
 
 	return err
 }
 
-func (o *Orchestrator) CancelTask(id uint64) error {
-	task, ok := o.taskStorage.Get(id)
+func (o *Orchestrator) OnCalculationFailure(taskId uint64) error {
+	task, ok := o.taskMemStorage.Get(taskId)
 	if !ok {
 		return errTaskNotFound
+	}
+
+	task.GetExpression().MarkAsFailed()
+
+	_, err := ExpressionRepo().Update(repo.Expression{
+		ID:     task.GetExpression().Id,
+		Status: repo.ExpressionFailed,
+	})
+	if err != nil {
+		return err
 	}
 
 	return task.Cancel()
 }
 
-func (o *Orchestrator) OnCalculationFailure(taskId uint64) error {
-	task, ok := o.taskStorage.Get(taskId)
-	if !ok {
-		return nil
-	}
-
-	task.GetExpression().MarkAsFailed()
-
-	err := task.Cancel()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-type expressionStatus string
-
-const (
-	waitingForProcessing expressionStatus = "waiting for processing"
-	processing           expressionStatus = "processing"
-	processed            expressionStatus = "processed"
-	failed               expressionStatus = "failed"
-)
-
 type ExpressionResponse struct {
-	Id     uint64           `json:"id"`
-	Status expressionStatus `json:"status"`
-	Result *float64         `json:"result"`
+	Id     uint64                `json:"id"`
+	Status repo.ExpressionStatus `json:"status"`
+	Result *float64              `json:"result"`
 }
 
-func newExpressionResponse(
-	expression *calc.Expression,
-) (*ExpressionResponse, error) {
-	var status expressionStatus
-
-	var result *float64
-
-	switch {
-	case expression.IsFailed:
-		status = failed
-		result = nil
-	case expression.IsEvaluated():
-		status = processed
-
-		r, err := expression.GetResult()
-		if err != nil {
-			return nil, err
-		}
-
-		result = &r
-	case expression.IsProcessing:
-		status = processing
-	default:
-		status = waitingForProcessing
-	}
-
-	return &ExpressionResponse{
-		Id:     expression.Id,
-		Status: status,
-		Result: result,
-	}, nil
-}
-
-func newTaskToProcess(task *calc.Task) (*pb.TaskToProcess, error) {
+func newTaskToProcess(
+	task *calc.Task,
+) (*pb.TaskToProcess, error) { //nolint:unparam
 	arg1, arg2 := task.GetArguments()
 	operator := task.GetOperator()
 

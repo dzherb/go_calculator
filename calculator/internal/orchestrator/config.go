@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dzherb/go_calculator/internal/pkg"
+	"github.com/dzherb/go_calculator/calculator/internal/pkg"
 )
 
 type Config struct {
@@ -54,6 +54,8 @@ func ConfigFromEnv() *Config {
 
 	if accessTokenTTL, exists := os.LookupEnv("ACCESS_TOKEN_TTL"); exists {
 		config.AccessTokenTTL = getDurationInMin(accessTokenTTL)
+	} else {
+		config.AccessTokenTTL = 1 * time.Hour
 	}
 
 	return config

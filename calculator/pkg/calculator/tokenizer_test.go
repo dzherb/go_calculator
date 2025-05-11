@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/dzherb/go_calculator/pkg/calculator"
+	"github.com/dzherb/go_calculator/calculator/pkg/calculator"
 )
 
 func TestTokenizer(t *testing.T) {

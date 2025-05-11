@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/dzherb/go_calculator/internal/storage"
+	"github.com/dzherb/go_calculator/calculator/internal/storage"
 	"github.com/georgysavva/scany/v2/pgxscan"
 )
 
 type User struct {
-	ID        int       `json:"id"`
+	ID        uint64    `json:"id"`
 	Username  string    `json:"username"`
 	Password  string    `json:"-"          db:"password_hash"`
 	CreatedAt time.Time `json:"created_at"`
@@ -17,7 +17,7 @@ type User struct {
 }
 
 type UserRepository interface {
-	Get(id int) (User, error)
+	Get(id uint64) (User, error)
 	GetByCredentials(username, password string) (User, error)
 	Create(user User) (User, error)
 }
@@ -32,7 +32,7 @@ func NewUserRepository() UserRepository {
 	}
 }
 
-func (ur *UserRepositoryImpl) Get(id int) (User, error) {
+func (ur *UserRepositoryImpl) Get(id uint64) (User, error) {
 	user := User{}
 	err := pgxscan.Get(
 		context.Background(),

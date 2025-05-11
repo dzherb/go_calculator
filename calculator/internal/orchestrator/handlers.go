@@ -3,11 +3,13 @@ package orchestrator
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
 
-	"github.com/dzherb/go_calculator/internal/auth"
+	"github.com/dzherb/go_calculator/calculator/internal/auth"
+	"github.com/dzherb/go_calculator/calculator/internal/repository"
 )
 
 type Request struct {
@@ -53,7 +55,9 @@ func CalculateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expId, err := orchestrator.CreateExpression(exp.Expression)
+	userID := r.Context().Value(UserIDKey).(uint64)
+
+	expId, err := orchestrator.CreateExpression(exp.Expression, userID)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		WriteError(w, err)
@@ -77,11 +81,13 @@ func CalculateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type ExpressionsResponse struct {
-	Expressions []*ExpressionResponse `json:"expressions"`
+	Expressions []repo.Expression `json:"expressions"`
 }
 
 func ExpressionsHandler(w http.ResponseWriter, r *http.Request) {
-	expressions, err := orchestrator.GetAllExpressions()
+	userID := r.Context().Value(UserIDKey).(uint64)
+
+	expressions, err := orchestrator.GetUserExpressions(userID)
 	if err != nil {
 		slog.Error(
 			"Failed to get expressions",
@@ -119,7 +125,7 @@ func ExpressionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expression, err := orchestrator.GetExpression(expressionId)
+	expr, err := orchestrator.GetExpression(expressionId)
 	if err != nil {
 		if errors.Is(err, errExpressionNotFound) {
 			w.WriteHeader(http.StatusNotFound)
@@ -133,7 +139,15 @@ func ExpressionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(expression)
+	userID := r.Context().Value(UserIDKey).(uint64)
+	if expr.UserID != userID {
+		w.WriteHeader(http.StatusNotFound)
+		WriteError(w, errExpressionNotFound)
+
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(expr)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		WriteError(w, err)
@@ -179,6 +193,22 @@ func baseAuthHandler(
 	}
 
 	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		WriteError(w, err)
+	}
+}
+
+func currentUserHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(UserIDKey).(uint64)
+
+	user, err := repo.NewUserRepository().Get(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		WriteError(w, fmt.Errorf("failed to get user"))
+	}
+
+	err = json.NewEncoder(w).Encode(user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		WriteError(w, err)

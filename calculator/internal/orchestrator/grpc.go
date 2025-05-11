@@ -8,7 +8,7 @@ import (
 	"net"
 	"strconv"
 
-	pb "github.com/dzherb/go_calculator/internal/gen"
+	pb "github.com/dzherb/go_calculator/calculator/internal/gen"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -68,7 +68,7 @@ func (gs *grpcServer) AddResult(
 	task *pb.TaskResult,
 ) (*pb.AddResultResponse, error) {
 	if task.Error != "" {
-		slog.Error(
+		slog.Warn(
 			"Agent returned calculation error",
 			slog.String("error", task.Error),
 		)

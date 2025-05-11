@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/dzherb/go_calculator/internal/storage"
+	"github.com/dzherb/go_calculator/calculator/internal/storage"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
 )
@@ -20,8 +20,8 @@ const (
 )
 
 type Expression struct {
-	ID         int              `json:"id"`
-	UserID     int              `json:"user_id"`
+	ID         uint64           `json:"id"`
+	UserID     uint64           `json:"user_id"`
 	Status     ExpressionStatus `json:"status"`
 	Expression string           `json:"expression"`
 	Result     *float64         `json:"result"`
@@ -30,10 +30,11 @@ type Expression struct {
 }
 
 type ExpressionRepository interface {
-	Get(id int) (Expression, error)
+	Get(id uint64) (Expression, error)
 	Create(expression Expression) (Expression, error)
 	Update(expression Expression) (Expression, error)
-	GetForUser(userID int) ([]Expression, error)
+	GetForUser(userID uint64) ([]Expression, error)
+	Unprocessed() ([]Expression, error)
 }
 
 type ExpressionRepositoryImpl struct {
@@ -52,7 +53,7 @@ func NewExpressionRepositoryFromTx(tx pgx.Tx) ExpressionRepository {
 	}
 }
 
-func (er *ExpressionRepositoryImpl) Get(id int) (Expression, error) {
+func (er *ExpressionRepositoryImpl) Get(id uint64) (Expression, error) {
 	expr := Expression{}
 	err := pgxscan.Get(
 		context.Background(),
@@ -116,7 +117,7 @@ func (er *ExpressionRepositoryImpl) Update(
 }
 
 func (er *ExpressionRepositoryImpl) GetForUser(
-	userID int,
+	userID uint64,
 ) ([]Expression, error) {
 	var exprs []Expression
 	err := pgxscan.Select(
@@ -125,8 +126,27 @@ func (er *ExpressionRepositoryImpl) GetForUser(
 		&exprs,
 		`SELECT id, user_id, status, expression, result, created_at, updated_at
 		FROM expressions
-		WHERE user_id = $1;`,
+		WHERE user_id = $1
+		ORDER BY created_at DESC;`,
 		userID,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return exprs, nil
+}
+
+func (er *ExpressionRepositoryImpl) Unprocessed() ([]Expression, error) {
+	var exprs []Expression
+	err := pgxscan.Select(
+		context.Background(),
+		er.db,
+		&exprs,
+		`SELECT id, user_id, status, expression, result, created_at, updated_at
+		FROM expressions
+		WHERE status IN ('new', 'processing');`,
 	)
 
 	if err != nil {

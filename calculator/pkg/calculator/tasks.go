@@ -127,7 +127,7 @@ func NewExpression(expression string) (*Expression, error) {
 
 	// Переводим токены в обратную польскую нотацию (RPN)
 	rpnOrganizedTokens := shuntingYard(tokens)
-	// Составлем абстрактное синтактическое дерево
+	// Составляем абстрактное синтаксическое дерево
 	ast := buildAST(rpnOrganizedTokens)
 
 	var root *operatorNode

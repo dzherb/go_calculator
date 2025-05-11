@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package tasks;
 
-option go_package = "github.com/dzherb/go_calculator/gen/proto";
+option go_package = "github.com/dzherb/go_calculator/calculator/gen/proto";
 
 service TaskService {
   rpc GetTask (GetTaskRequest) returns (TaskToProcess);

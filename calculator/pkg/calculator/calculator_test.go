@@ -3,7 +3,7 @@ package calc_test
 import (
 	"testing"
 
-	"github.com/dzherb/go_calculator/pkg/calculator"
+	"github.com/dzherb/go_calculator/calculator/pkg/calculator"
 )
 
 func TestCalculator(t *testing.T) {
@@ -16,6 +16,11 @@ func TestCalculator(t *testing.T) {
 			name:           "simple",
 			expression:     "1+1",
 			expectedResult: 2,
+		},
+		{
+			name:           "one number",
+			expression:     "1",
+			expectedResult: 1,
 		},
 		{
 			name:           "priority",
@@ -95,6 +100,10 @@ func TestCalculator(t *testing.T) {
 		{
 			name:       "empty expression",
 			expression: "",
+		},
+		{
+			name:       "whitespace only expression",
+			expression: "      ",
 		},
 		{
 			name:       "no operators",

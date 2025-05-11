@@ -1,10 +1,12 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 
-	repo "github.com/dzherb/go_calculator/internal/repository"
-	"github.com/dzherb/go_calculator/pkg/security"
+	"github.com/dzherb/go_calculator/calculator/internal/repository"
+	"github.com/dzherb/go_calculator/calculator/pkg/security"
+	"github.com/jackc/pgx/v5"
 )
 
 type Service interface {
@@ -13,7 +15,7 @@ type Service interface {
 }
 
 type AccessPayload struct {
-	Token string    `json:"token"`
+	Token string    `json:"access_token"`
 	User  repo.User `json:"user"`
 }
 
@@ -42,10 +44,14 @@ func (s *ServiceImpl) Login(username, password string) (AccessPayload, error) {
 
 	user, err := ur.GetByCredentials(username, password)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = fmt.Errorf("invalid credentials")
+		}
+
 		return AccessPayload{}, fmt.Errorf(errFmt, err)
 	}
 
-	return s.issueToken(user, errFmt)
+	return s.issueToken(user, "failed to login: %w")
 }
 
 func (s *ServiceImpl) Register(
@@ -56,7 +62,7 @@ func (s *ServiceImpl) Register(
 
 	err := s.validateCredentials(username, password)
 	if err != nil {
-		return AccessPayload{}, fmt.Errorf(errFmt, err)
+		return AccessPayload{}, err
 	}
 
 	ur := repo.NewUserRepository()

@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dzherb/go_calculator/internal/auth"
-	repo "github.com/dzherb/go_calculator/internal/repository"
-	"github.com/dzherb/go_calculator/internal/storage"
-	"github.com/dzherb/go_calculator/pkg/security"
+	"github.com/dzherb/go_calculator/calculator/internal/auth"
+	"github.com/dzherb/go_calculator/calculator/internal/repository"
+	"github.com/dzherb/go_calculator/calculator/internal/storage"
+	"github.com/dzherb/go_calculator/calculator/pkg/security"
 )
 
 func TestMain(m *testing.M) {

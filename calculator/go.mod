@@ -1,4 +1,4 @@
-module github.com/dzherb/go_calculator
+module github.com/dzherb/go_calculator/calculator
 
 go 1.24.1
 

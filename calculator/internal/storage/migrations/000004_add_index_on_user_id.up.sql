@@ -1,0 +1,1 @@
+CREATE INDEX user_id_index ON expressions(user_id);

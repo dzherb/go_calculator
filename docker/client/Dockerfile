@@ -8,16 +8,16 @@ RUN yarn install
 
 COPY ./client .
 
-ARG BACKEND_SERVER_HOST
-ARG BACKEND_SERVER_PORT
+ARG BACKEND_BASE_URL
 
-ENV VITE_BACKEND_SERVER_HOST=$BACKEND_SERVER_HOST
-ENV VITE_BACKEND_SERVER_PORT=$BACKEND_SERVER_PORT
+ENV VITE_BACKEND_BASE_URL=$BACKEND_BASE_URL
 
 RUN yarn build
 
-FROM nginx:alpine AS prod
+FROM alpine
 
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/dist /tmp_static
 
-EXPOSE 80
+RUN chmod +rwx /tmp_static/*
+
+CMD rm -rf /static/* && mv /tmp_static/* /static

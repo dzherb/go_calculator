@@ -20,7 +20,7 @@ func (a *App) ServeHTTP(ctx context.Context) error {
 
 	srv := http.Server{
 		Addr:         a.config.Host + ":" + a.config.Port,
-		Handler:      CommonMiddleware(mux),
+		Handler:      RecoverMiddleware(CommonMiddleware(mux)),
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
 	}
@@ -61,6 +61,13 @@ func registerHandlers(mux *http.ServeMux) {
 	mux.Handle("/api/v1/auth/login",
 		EnsureMethodsMiddleware(http.MethodPost)(
 			http.HandlerFunc(LoginHandler),
+		),
+	)
+	mux.Handle("/api/v1/users/me",
+		AuthRequired(
+			EnsureMethodsMiddleware(http.MethodGet)(
+				http.HandlerFunc(currentUserHandler),
+			),
 		),
 	)
 	mux.Handle("/api/v1/calculate",

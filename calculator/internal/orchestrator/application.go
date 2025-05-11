@@ -3,7 +3,7 @@ package orchestrator
 import (
 	"context"
 
-	"github.com/dzherb/go_calculator/pkg/security"
+	"github.com/dzherb/go_calculator/calculator/pkg/security"
 )
 
 type App struct {
@@ -31,6 +31,8 @@ func (a *App) Serve() error {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	defer cancel()
+
+	go NewDaemon().Start(ctx)
 
 	go func() {
 		errChan <- a.ServeGRPC(ctx)

@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/dzherb/go_calculator/pkg/security"
+	"github.com/dzherb/go_calculator/calculator/pkg/security"
 )
 
 func CommonMiddleware(next http.Handler) http.Handler {
@@ -34,6 +34,19 @@ func CommonMiddleware(next http.Handler) http.Handler {
 				"Content-Type,access-control-allow-origin, access-control-allow-headers",
 			)
 		w.Header().Set("Content-Type", "application/json")
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func RecoverMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				slog.Error("recovered from panic", "error", err)
+			}
+		}()
 
 		next.ServeHTTP(w, r)
 	})
@@ -84,6 +97,8 @@ func AuthRequired(next http.Handler) http.Handler {
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			WriteError(w, err)
+
+			return
 		}
 
 		r = r.WithContext(context.WithValue(r.Context(), UserIDKey, userID))

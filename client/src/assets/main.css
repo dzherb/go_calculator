@@ -1,0 +1,7 @@
+.error-container {
+  height: 50px;
+}
+
+.select-none {
+  user-select: none;
+}
